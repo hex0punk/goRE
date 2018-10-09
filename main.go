@@ -110,7 +110,7 @@ func main() {
 	remote.NetworkEvents(true)
 	remote.PageEvents(true) //Not used at the moment, but enabling anyways
 	remote.DOMEvents(true) //Not used at the moment, but enabling anyways
-	remote.LogEvents(true) //Not used at the moment, but enabling anyways
+	remote.LogEvents(true)
 
 	//Set Network Request Interception for terminal logging
 	htmlRequestPattern := godet.RequestPattern{
