@@ -14,29 +14,49 @@ import (
 	"github.com/raff/godet"
 )
 
-func main() {
+type DebuggerOptions struct {
+	EnableConsole 	bool
+	Verbose       	bool
+
+	AlterDocument	bool
+	AlterScript		bool
+}
+
+type State struct {
+	Debugger      *godet.RemoteDebugger
+	Done          chan bool
+	Options 	  DebuggerOptions
+}
+
+
+func OpenChrome(portNumber int) error {
 	var chromeapp string
 	chromeapp = `open -na "/Applications/Google Chrome.app" --args
-			--remote-debugging-port=9222
+			--remote-debugging-port=` + strconv.Itoa(portNumber) + `
 			--window-size=1200,800
 			--user-data-dir=/tmp/chrome-testing
 			--auto-open-devtools-for-tabs`
 
 	log.Println("[+] opening chrome:" + chromeapp)
-	if err := runCommand(chromeapp); err != nil {
-		log.Println("[-] Unable to start browser!")
-	}
 
-	//Connect to chrome
-	var remote *godet.RemoteDebugger
+	err := runCommand(chromeapp)
+
+	return err
+}
+
+func SetupDebugger(portNumber int, verbose bool) *godet.RemoteDebugger {
+	// Requires an opened browser running DevTools protocol
+	var debugger *godet.RemoteDebugger
 	var err error
 
+	// Keep checking for browser with [portNumber] connection
+	log.Println("Attempting to connect to browser on " + "localhost:"+strconv.Itoa(portNumber))
 	for i := 0; i < 10; i++ {
 		if i > 0 {
 			time.Sleep(500 * time.Millisecond)
 		}
 
-		remote, err = godet.Connect("localhost:9222", false)
+		debugger, err = godet.Connect("localhost:"+strconv.Itoa(portNumber), false)
 		if err == nil {
 			break
 		}
@@ -48,30 +68,19 @@ func main() {
 		log.Fatal("[-] Unable to connect to the browser!")
 	}
 
-	defer remote.Close()
+	defer debugger.Close()
 
-	done := make(chan bool)
-	shouldWait := true
+	return debugger
+}
 
-	var pwait chan bool
-
-	//Handle connection termination and expired debugging events
-	remote.CallbackEvent(godet.EventClosed, func(params godet.Params) {
-		log.Println("[-] RemoteDebugger connection terminated!")
-		done <- true
-	})
-
-	remote.CallbackEvent("Emulation.virtualTimeBudgetExpired", func(params godet.Params) {
-		pwait <- true
-	})
-
+func SetupConsoleLogging(s *State) {
 	//Log console
-	remote.CallbackEvent("Log.entryAdded", func(params godet.Params) {
+	s.Debugger.CallbackEvent("Log.entryAdded", func(params godet.Params) {
 		entry := params.Map("entry")
 		log.Println("LOG", entry["type"], entry["level"], entry["text"])
 	})
 
-	remote.CallbackEvent("Runtime.consoleAPICalled", func(params godet.Params) {
+	s.Debugger.CallbackEvent("Runtime.consoleAPICalled", func(params godet.Params) {
 		l := []interface{}{"CONSOLE", params["type"].(string)}
 
 		for _, a := range params["args"].([]interface{}) {
@@ -105,14 +114,112 @@ func main() {
 		}
 		log.Println(l...)
 	})
+}
 
-	remote.RuntimeEvents(true)
-	remote.NetworkEvents(true)
-	remote.PageEvents(true) //Not used at the moment, but enabling anyways
-	remote.DOMEvents(true) //Not used at the moment, but enabling anyways
-	remote.LogEvents(true)
+func SetupRequestInterception(s *State, requestPatterns ...godet.RequestPattern) {
+	s.Debugger.SetRequestInterception(requestPatterns ...)
+	responses := map[string]string{}
+	s.Debugger.CallbackEvent("Network.requestIntercepted", func(params godet.Params) {
+		iid := params.String("interceptionId")
+		rtype := params.String("resourceType")
+		reason := responses[rtype]
+		log.Println("[+] Request intercepted for", iid, rtype, params.Map("request")["url"])
+		if reason != "" {
+			log.Println("  abort with reason", reason)
+		}
 
-	//Set Network Request Interception for terminal logging
+		// Alter HTML in request response
+		if s.Options.AlterDocument && rtype == "Document" && iid != "" {
+			res, err := s.Debugger.SendRequest("Network.getResponseBodyForInterception", godet.Params{
+				"interceptionId": iid,
+			})
+
+			if err != nil {
+				log.Println("[-] Unable to get intercepted response body!")
+			}
+
+			rawAlteredResponse, err := AlterDocument(res)
+			if err != nil{
+				log.Println("[-] Unable to alter HTML")
+			}
+
+			if rawAlteredResponse != "" {
+				log.Println("[+] Sending modified body")
+				s.Debugger.ContinueInterceptedRequest(iid, godet.ErrorReason(reason), rawAlteredResponse, "", "", "", nil)
+			}
+		} else {
+			s.Debugger.ContinueInterceptedRequest(iid, godet.ErrorReason(reason), "", "", "", "", nil)
+		}
+	})
+}
+
+func AlterDocument(debuggerResponse map[string]interface{}) (string, error) {
+	var responseBody []byte
+	if b, ok := debuggerResponse["base64Encoded"]; ok && b.(bool) {
+		responseBody, _ = base64.StdEncoding.DecodeString(debuggerResponse["body"].(string))
+	} else {
+		responseBody = []byte(debuggerResponse["body"].(string))
+	}
+
+	alteredBody, err := processHtml(responseBody)
+	if err != nil {
+		return "", err
+	}
+
+	alteredHeader := "Date: " + fmt.Sprintf("%s", time.Now().Format(time.RFC3339)) + "\r\n" +
+		"Connection : close\r\n" +
+		"Content-Length: " + strconv.Itoa(len(alteredBody)) + "\r\n" +
+		"Content-Type: text/html; charset=utf-8"
+
+	rawAlteredResponse := base64.StdEncoding.EncodeToString([]byte("HTTP/1.1 200 OK" + "\r\n" + alteredHeader + "\r\n\r\n\r\n" + alteredBody))
+
+	return rawAlteredResponse, nil
+}
+
+func EnableAllEvents(s *State) {
+	s.Debugger.RuntimeEvents(true)
+	s.Debugger.NetworkEvents(true)
+	s.Debugger.PageEvents(true) //Not used at the moment, but enabling anyways
+	s.Debugger.DOMEvents(true)  //Not used at the moment, but enabling anyways
+	s.Debugger.LogEvents(true)
+}
+
+func main() {
+	portNumber := 9222
+	s := State{}
+	// This is silly, but this is just me preparing the code to use github.com/spf13/cobra
+	s.Options = DebuggerOptions {
+		Verbose : true,
+		EnableConsole : true,
+		AlterDocument: true,
+		AlterScript: true,
+	}
+
+	// Launch chrome with debugging port
+	err := OpenChrome(portNumber)
+	if err != nil{
+		log.Println("[-] Unable to start browser!")
+	}
+
+	// Get a debugger reference
+	s.Debugger = SetupDebugger(portNumber, s.Options.Verbose)
+	s.Done = make(chan bool)
+
+	shouldWait := true
+
+	//Handle connection termination and expired debugging events
+	s.Debugger.CallbackEvent(godet.EventClosed, func(params godet.Params) {
+		log.Println("[-] RemoteDebugger connection terminated!")
+		s.Done <- true
+	})
+
+	//Enable Console methods
+	SetupConsoleLogging(&s)
+
+	//Enable all debugger events
+	EnableAllEvents(&s)
+
+	//Set Network Request Interceptor Patterns for terminal logging
 	htmlRequestPattern := godet.RequestPattern{
 		UrlPattern:        "*",
 		ResourceType:      "Document",
@@ -126,63 +233,12 @@ func main() {
 	}
 
 	//Setup intercept event behavior
-	remote.SetRequestInterception(htmlRequestPattern, jsRequestPattern)
-	responses := map[string]string{}
-	remote.CallbackEvent("Network.requestIntercepted", func(params godet.Params) {
-		iid := params.String("interceptionId")
-		rtype := params.String("resourceType")
-		reason := responses[rtype]
-		log.Println("[+] Request intercepted for", iid, rtype, params.Map("request")["url"])
-		if reason != "" {
-			log.Println("  abort with reason", reason)
-		}
-
-		var newBody string
-		var newHeaders string
-
-		//Test intercepting HTML
-		if rtype == "Document" && iid != "" {
-			log.Println("[+] Request intercepted for", iid, rtype, params.Map("request")["url"])
-
-			//Get response body for interception
-			res, err := remote.SendRequest("Network.getResponseBodyForInterception", godet.Params{
-				"interceptionId": iid,
-			})
-
-			var responseBody []byte
-			if err != nil {
-				log.Println("[-] Unable to get intercepted response body!")
-			} else if b, ok := res["base64Encoded"]; ok && b.(bool) {
-				responseBody, _ = base64.StdEncoding.DecodeString(res["body"].(string))
-			} else {
-				responseBody = []byte(res["body"].(string))
-			}
-
-			newBody, err = processHtml(responseBody)
-			if err !=  nil {
-				log.Println("[-] Unable to process HTML")
-			}
-
-			newHeaders = "Date: " + fmt.Sprintf("%s", time.Now().Format(time.RFC3339)) + "\r\n" +
-				"Connection : close\r\n" +
-				"Content-Length: " + strconv.Itoa(len(newBody)) + "\r\n" +
-				"Content-Type: text/html; charset=utf-8"
-
-		}
-
-		if newBody != "" && newHeaders != ""{
-			log.Println("[+] Sending modified body")
-			rawResponse := base64.StdEncoding.EncodeToString([]byte("HTTP/1.1 200 OK" + "\r\n" + newHeaders + "\r\n\r\n\r\n" + newBody))
-			remote.ContinueInterceptedRequest(iid, godet.ErrorReason(reason), rawResponse, "", "", "", nil)
-		} else {
-			remote.ContinueInterceptedRequest(iid, godet.ErrorReason(reason), "", "", "", "", nil)
-		}
-	})
+	SetupRequestInterception(&s, htmlRequestPattern, jsRequestPattern)
 
 	//Keep this running
 	if shouldWait {
 		log.Println("[+] Wait for events...")
-		<-done
+		<- s.Done
 	}
 }
 
@@ -197,12 +253,12 @@ func processHtml(body []byte) (string, error) {
 	r := strings.NewReader(bodyString)
 	doc, err := goquery.NewDocumentFromReader(r)
 
-	if err != nil{
+	if err != nil {
 		return "", err
 	}
 	doc.Find("input").Each(func(i int, s *goquery.Selection) {
 		att, ex := s.Attr("type")
-		if ex && att == "hidden"{
+		if ex && att == "hidden" {
 			s.SetAttr("type", "")
 		}
 	})
@@ -223,4 +279,3 @@ func processHtml(body []byte) (string, error) {
 
 	return doc.Html()
 }
-
