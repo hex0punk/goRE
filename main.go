@@ -128,9 +128,6 @@ func SetupRequestInterception(s *State, requestPatterns ...godet.RequestPattern)
 		// Alter HTML in request response
 		if s.Options.AlterDocument && rtype == "Document" && iid != "" {
 			res, err := s.Debugger.GetResponseBodyForInterception(iid)
-			//res, err := s.Debugger.SendRequest("Network.getResponseBodyForInterception", godet.Params{
-			//	"interceptionId": iid,
-			//})
 
 			if err != nil {
 				log.Println("[-] Unable to get intercepted response body!")
