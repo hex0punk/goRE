@@ -127,9 +127,10 @@ func SetupRequestInterception(s *State, requestPatterns ...godet.RequestPattern)
 
 		// Alter HTML in request response
 		if s.Options.AlterDocument && rtype == "Document" && iid != "" {
-			res, err := s.Debugger.SendRequest("Network.getResponseBodyForInterception", godet.Params{
-				"interceptionId": iid,
-			})
+			res, err := s.Debugger.GetResponseBodyForInterception(iid)
+			//res, err := s.Debugger.SendRequest("Network.getResponseBodyForInterception", godet.Params{
+			//	"interceptionId": iid,
+			//})
 
 			if err != nil {
 				log.Println("[-] Unable to get intercepted response body!")
@@ -150,15 +151,8 @@ func SetupRequestInterception(s *State, requestPatterns ...godet.RequestPattern)
 	})
 }
 
-func AlterDocument(debuggerResponse map[string]interface{}) (string, error) {
-	var responseBody []byte
-	if b, ok := debuggerResponse["base64Encoded"]; ok && b.(bool) {
-		responseBody, _ = base64.StdEncoding.DecodeString(debuggerResponse["body"].(string))
-	} else {
-		responseBody = []byte(debuggerResponse["body"].(string))
-	}
-
-	alteredBody, err := processHtml(responseBody)
+func AlterDocument(debuggerResponse []byte) (string, error) {
+	alteredBody, err := processHtml(debuggerResponse)
 	if err != nil {
 		return "", err
 	}
