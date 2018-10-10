@@ -44,9 +44,8 @@ func OpenChrome(portNumber int) error {
 	return err
 }
 
-func SetupDebugger(portNumber int, verbose bool) *godet.RemoteDebugger {
+func SetupDebugger(s *State, portNumber int) {
 	// Requires an opened browser running DevTools protocol
-	var debugger *godet.RemoteDebugger
 	var err error
 
 	// Keep checking for browser with [portNumber] connection
@@ -56,7 +55,7 @@ func SetupDebugger(portNumber int, verbose bool) *godet.RemoteDebugger {
 			time.Sleep(500 * time.Millisecond)
 		}
 
-		debugger, err = godet.Connect("localhost:"+strconv.Itoa(portNumber), false)
+		s.Debugger, err = godet.Connect("localhost:"+strconv.Itoa(portNumber), s.Options.Verbose)
 		if err == nil {
 			break
 		}
@@ -67,14 +66,11 @@ func SetupDebugger(portNumber int, verbose bool) *godet.RemoteDebugger {
 	if err != nil {
 		log.Fatal("[-] Unable to connect to the browser!")
 	}
-
-	defer debugger.Close()
-
-	return debugger
 }
 
 func SetupConsoleLogging(s *State) {
 	//Log console
+	log.Println("[+] Setting up console events.")
 	s.Debugger.CallbackEvent("Log.entryAdded", func(params godet.Params) {
 		entry := params.Map("entry")
 		log.Println("LOG", entry["type"], entry["level"], entry["text"])
@@ -117,6 +113,7 @@ func SetupConsoleLogging(s *State) {
 }
 
 func SetupRequestInterception(s *State, requestPatterns ...godet.RequestPattern) {
+	log.Println("[+] Setting up interception.")
 	s.Debugger.SetRequestInterception(requestPatterns ...)
 	responses := map[string]string{}
 	s.Debugger.CallbackEvent("Network.requestIntercepted", func(params godet.Params) {
@@ -177,6 +174,7 @@ func AlterDocument(debuggerResponse map[string]interface{}) (string, error) {
 }
 
 func EnableAllEvents(s *State) {
+	log.Println("[+] Enabling all debugger events.")
 	s.Debugger.RuntimeEvents(true)
 	s.Debugger.NetworkEvents(true)
 	s.Debugger.PageEvents(true) //Not used at the moment, but enabling anyways
@@ -189,7 +187,7 @@ func main() {
 	s := State{}
 	// This is silly, but this is just me preparing the code to use github.com/spf13/cobra
 	s.Options = DebuggerOptions {
-		Verbose : true,
+		Verbose : false,
 		EnableConsole : true,
 		AlterDocument: true,
 		AlterScript: true,
@@ -202,14 +200,16 @@ func main() {
 	}
 
 	// Get a debugger reference
-	s.Debugger = SetupDebugger(portNumber, s.Options.Verbose)
+	SetupDebugger(&s, portNumber)
+	defer s.Debugger.Close()
+
 	s.Done = make(chan bool)
 
 	shouldWait := true
 
 	//Handle connection termination and expired debugging events
 	s.Debugger.CallbackEvent(godet.EventClosed, func(params godet.Params) {
-		log.Println("[-] RemoteDebugger connection terminated!")
+		log.Println("[-] Remote Debugger connection terminated!")
 		s.Done <- true
 	})
 
