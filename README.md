@@ -5,7 +5,9 @@ Exploring pentesting and reverse engineering uses of the Chrome DevTools protoco
 
 Right now the script intercepts requests, processes body responses and unhides hidden input. It also sets all `ng-if` and `*ngIf` attributes to true (for Angular 1.X and 2+). This can be helpful when you want to explore an Angular application and see what content is not rendered by Angular on page loads, as in some cases this could allow us to discover directories that are hidden to some users right away (note that `ng-if` does not hide or show input; rather, it decides whether to render an element on page loads). 
 
-While there are some options (i.e. `Verbose`, `EnableConsoleLogging`, etc.), those can only be set by changing the code. This is only temporarily, as I am working on making this an actual tool and not just a script.  
+While there are some options (i.e. `Verbose`, `EnableConsoleLogging`, etc.), those can only be set by changing the code. This is only temporarily, as I am working on making this an actual tool and not just a script.
+
+Also, if you want to learn more about how this idea came about and how I went about writting this, you can read ]this blog post](https://codedharma.com/posts/chrome-devtools-fun-with-golang/)
 
 ## Caveats
 - The tool will crash when accessing some web pages. I have not found the reason yet, though I will continue to troubleshoot it. This typically occurs here:
