@@ -1,3 +1,5 @@
+[![Go Report Card](https://goreportcard.com/badge/github.com/DharmaOfCode/gorp)](https://goreportcard.com/report/github.com/DharmaOfCode/gorp)
+
 # gorp
 Exploring pentesting and reverse engineering uses of the Chrome DevTools protocol with Go
 
