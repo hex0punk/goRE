@@ -9,6 +9,24 @@ Right now the script intercepts requests, processes body responses and unhides h
 
 While there are some options (i.e. `Verbose`, `EnableConsoleLogging`, etc.), those can only be set by changing the code. This is only temporarily, as I am working on making this an actual tool and not just a script.
 
+## Running the PoC
+
+```
+go run main.go
+```
+You can change the following `DebuggerOptions` flags directly in the code:
+
+```golang
+type DebuggerOptions struct {
+	EnableConsole 	bool
+	Verbose       	bool
+
+	AlterDocument	bool
+	AlterScript		bool
+}
+```
+I am currentely working on a CLI tool to make use of this PoC and will be pushing updates to a feature branch for that. 
+
 ## Caveats
 - The tool will crash when accessing some web pages. I have not found the reason yet, though I will continue to troubleshoot it. This typically occurs here:
 
