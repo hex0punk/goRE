@@ -112,10 +112,12 @@ func SetupConsoleLogging(s *State) {
 	})
 }
 
+//Enable request interception using the specific requestPatterns
 func SetupRequestInterception(s *State, requestPatterns ...godet.RequestPattern) {
 	log.Println("[+] Setting up interception.")
 	s.Debugger.SetRequestInterception(requestPatterns ...)
 	responses := map[string]string{}
+	// Register a function to process the Network.reuqestIntercepted event
 	s.Debugger.CallbackEvent("Network.requestIntercepted", func(params godet.Params) {
 		iid := params.String("interceptionId")
 		rtype := params.String("resourceType")
@@ -164,6 +166,7 @@ func AlterDocument(debuggerResponse []byte) (string, error) {
 	return rawAlteredResponse, nil
 }
 
+//EnableAllEvents enables enables all debugger events
 func EnableAllEvents(s *State) {
 	log.Println("[+] Enabling all debugger events.")
 	s.Debugger.RuntimeEvents(true)
@@ -194,6 +197,7 @@ func main() {
 	SetupDebugger(&s, portNumber)
 	defer s.Debugger.Close()
 
+	//Create a channel to be able to signal a termination to our Chrome connection
 	s.Done = make(chan bool)
 
 	shouldWait := true
