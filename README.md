@@ -28,14 +28,7 @@ type DebuggerOptions struct {
 I am currentely working on a CLI tool to make use of this PoC and will be pushing updates to a feature branch for that. 
 
 ## Caveats
-- The tool will crash when accessing some web pages. I have not found the reason yet, though I will continue to troubleshoot it. This typically occurs here:
-
-   ```golang
-   if rawAlteredResponse != "" {
-	   log.Println("[+] Sending modified body")
-	   s.Debugger.ContinueInterceptedRequest(iid, godet.ErrorReason(reason), rawAlteredResponse, "", "", "", nil)
-   }
-   ```
+- The tool will crash when accessing pages when reponse bodys are ~ 10300 bytes long. Body responses this big are gzipped, and I am workong on a solution for this, but I am running into some issue. I have [question posted in StackoveFlow](https://stackoverflow.com/questions/52788269/chrome-devtools-protocol-continueinterceptedrequest-with-gzip-body-in-golang) and I keep testing ways to solve this issue. 
 
 
 ## Immediate Needs
