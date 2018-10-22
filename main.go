@@ -40,7 +40,7 @@ type State struct {
 	Target 	 *gcd.ChromeTarget
 }
 
-var testStartupFlags = []string{"--disable-new-tab-first-run", "--window-size=1200,800", "--auto-open-devtools-for-tabs","--disable-popup-blocking"}
+var testStartupFlags = []string{"-na", "--disable-gpu", "--window-size=1200,800", "--auto-open-devtools-for-tabs","--disable-popup-blocking"}
 
 func init() {
 	flag.StringVar(&testPath, "chrome", "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", "path to chrome")
@@ -84,8 +84,11 @@ func AlterDocument(debuggerResponse string, headers map[string]interface{}) (str
 }
 
 //Enable request interception using the specific requestPatterns
-func SetupRequestInterception(s *State, requestPatterns []*gcdapi.NetworkRequestPattern) {
-	s.Target.Network.SetRequestInterception(requestPatterns)
+func SetupRequestInterception(s *State, params *gcdapi.NetworkSetRequestInterceptionParams) {
+	log.Println("[+] Setting up request interception")
+	if _, err := s.Target.Network.SetRequestInterceptionWithParams(params); err != nil {
+		log.Println("[-] Unable to setup request interception!", err)
+	}
 	s.Target.Subscribe("Network.requestIntercepted", func(target *gcd.ChromeTarget, v []byte) {
 
 		msg := &gcdapi.NetworkRequestInterceptedEvent{}
@@ -93,7 +96,7 @@ func SetupRequestInterception(s *State, requestPatterns []*gcdapi.NetworkRequest
 		if err != nil {
 			log.Fatalf("error unmarshalling event data: %v\n", err)
 		}
-		log.Println("Method: %s\n", msg.Method)
+		log.Println(msg)
 		iid := msg.Params.InterceptionId
 		rtype := msg.Params.ResourceType
 		reason := msg.Params.ResponseErrorReason
@@ -106,32 +109,34 @@ func SetupRequestInterception(s *State, requestPatterns []*gcdapi.NetworkRequest
 		}
 
 		if s.Options.AlterDocument && rtype == "Document" && iid != "" {
-			res, encoded, err := target.Network.GetResponseBodyForInterception(iid)
+			res, encoded, err := s.Target.Network.GetResponseBodyForInterception(iid)
 			if err != nil {
-				log.Println("[-] Unable to get intercepted response body!")
-			}
-			if encoded{
-				res, err = decodeBase64Response(res)
-				if err != nil {
-					log.Println("[-] Unable to decode body!")
+				log.Println("[-] Unable to get intercepted response body!", err.Error())
+				target.Network.ContinueInterceptedRequest(iid, reason, "", "", "", "", nil, nil)
+			} else {
+				if encoded{
+					res, err = decodeBase64Response(res)
+					if err != nil {
+						log.Println("[-] Unable to decode body!")
+					}
 				}
-			}
 
-			rawAlteredResponse, err := AlterDocument(res, responseHeaders)
-			if err != nil {
-				log.Println("[-] Unable to alter HTML")
-			}
-
-			if rawAlteredResponse != "" {
-				log.Println("[+] Sending modified body")
-
-				_, err := target.Network.ContinueInterceptedRequest(iid, reason, rawAlteredResponse, "", "", "", nil, nil)
+				rawAlteredResponse, err := AlterDocument(res, responseHeaders)
 				if err != nil {
-					log.Println(err)
+					log.Println("[-] Unable to alter HTML")
+				}
+
+				if rawAlteredResponse != "" {
+					log.Println("[+] Sending modified body")
+
+					_, err := s.Target.Network.ContinueInterceptedRequest(iid, reason, rawAlteredResponse, "", "", "", nil, nil)
+					if err != nil {
+						log.Println(err)
+					}
 				}
 			}
 		} else {
-			target.Network.ContinueInterceptedRequest(iid, reason, "", "", "", "", nil, nil)
+			s.Target.Network.ContinueInterceptedRequest(iid, reason, "", "", "", "", nil, nil)
 		}
 	})
 }
@@ -149,28 +154,25 @@ func main(){
 	s.Debugger = startGcd()
 	defer s.Debugger.ExitProcess()
 
-	s.Target = startTarget(s.Debugger)
+	startTarget(&s)
 	//Create a channel to be able to signal a termination to our Chrome connection
 	s.Done = make(chan bool)
 	shouldWait := true
 
-
-	//Set Network Request Interceptor Patterns for terminal logging
-	htmlRequestPattern := gcdapi.NetworkRequestPattern {
-		UrlPattern:        "*",
-		ResourceType:      "Document",
+	patterns := make([]*gcdapi.NetworkRequestPattern, 2)
+	patterns[0] = &gcdapi.NetworkRequestPattern{
+		UrlPattern: "*",
+		ResourceType: "Document",
 		InterceptionStage: "HeadersReceived",
 	}
-
-	jsRequestPattern := gcdapi.NetworkRequestPattern{
+	patterns[1] = &gcdapi.NetworkRequestPattern{
 		UrlPattern:        "*.js",
 		ResourceType:      "Script",
 		InterceptionStage: "HeadersReceived",
 	}
+	interceptParams := &gcdapi.NetworkSetRequestInterceptionParams{Patterns: patterns}
 
-	reqPattern := []*gcdapi.NetworkRequestPattern{&jsRequestPattern, &htmlRequestPattern}
-
-	SetupRequestInterception(&s, reqPattern)
+	SetupRequestInterception(&s, interceptParams)
 
 	if shouldWait {
 		log.Println("[+] Wait for events...")
@@ -182,27 +184,34 @@ func startGcd() *gcd.Gcd {
 	testDir = "/tmp/chrome-testing"
 	testPort = "9222"
 	debugger := gcd.NewChromeDebugger()
+	//debugger.DeleteProfileOnExit()
 	debugger.AddFlags(testStartupFlags)
 	debugger.StartProcess(testPath, testDir, testPort)
 	return debugger
 }
 
-func startTarget(debugger *gcd.Gcd) *gcd.ChromeTarget {
-	target, err := debugger.NewTab()
+func startTarget(s *State) {
+	target, err := s.Debugger.NewTab()
 	if err != nil {
 		log.Fatalf("error getting new tab: %s\n", err)
 	}
 
 	// TODO: set based on verbose flag
-	target.DebugEvents(false)
+	target.DebugEvents(s.Options.Verbose)
 	target.DOM.Enable()
 	target.Console.Enable()
 	target.Page.Enable()
 	target.Debugger.Enable()
 	//This does not seem right, but will leave this here for now
-	target.Network.Enable(999999,999999,999999)
-	return target
-
+	//target.Network.Enable(999999,999999,999999)
+	networkParams := &gcdapi.NetworkEnableParams{
+		MaxTotalBufferSize:    -1,
+		MaxResourceBufferSize: -1,
+	}
+	if _, err := target.Network.EnableWithParams(networkParams); err != nil {
+		log.Fatal("[-] Error enabling network!")
+	}
+	s.Target = target
 }
 
 func decodeBase64Response(res string) (string, error) {
