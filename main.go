@@ -1,251 +1,222 @@
 package main
 
 import (
+	"bytes"
+	"compress/gzip"
 	"encoding/base64"
+	"encoding/json"
+	"flag"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
+	"github.com/wirepair/gcd"
+	"github.com/wirepair/gcd/gcdapi"
 	"log"
-	"os/exec"
+	"net"
 	"strconv"
 	"strings"
 	"time"
+)
 
-	"github.com/gobs/args"
-	"github.com/raff/godet"
+var (
+	testListener   net.Listener
+	testPath       string
+	testDir        string
+	testPort       string
+	testServerAddr string
 )
 
 type DebuggerOptions struct {
-	EnableConsole 	bool
-	Verbose       	bool
+	EnableConsole bool
+	Verbose       bool
 
-	AlterDocument	bool
-	AlterScript		bool
+	AlterDocument bool
+	AlterScript   bool
 }
 
 type State struct {
-	Debugger      *godet.RemoteDebugger
-	Done          chan bool
-	Options 	  DebuggerOptions
+	Debugger *gcd.Gcd
+	Done     chan bool
+	Options  DebuggerOptions
+	Target 	 *gcd.ChromeTarget
 }
 
+var testStartupFlags = []string{"--disable-new-tab-first-run", "--window-size=1200,800", "--auto-open-devtools-for-tabs","--disable-popup-blocking"}
 
-func OpenChrome(portNumber int) error {
-	var chromeapp string
-	chromeapp = `open -na "/Applications/Google Chrome.app" --args
-			--remote-debugging-port=` + strconv.Itoa(portNumber) + `
-			--window-size=1200,800
-			--user-data-dir=/tmp/chrome-testing
-			--auto-open-devtools-for-tabs`
-
-	log.Println("[+] opening chrome:" + chromeapp)
-
-	err := runCommand(chromeapp)
-
-	return err
+func init() {
+	flag.StringVar(&testPath, "chrome", "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", "path to chrome")
+	flag.StringVar(&testDir, "dir", "/tmp/chrome-testing", "user directory")
+	flag.StringVar(&testPort, "port", "9222", "Debugger port")
 }
 
-func SetupDebugger(s *State, portNumber int) {
-	// Requires an opened browser running DevTools protocol
-	var err error
-
-	// Keep checking for browser with [portNumber] connection
-	log.Println("Attempting to connect to browser on " + "localhost:"+strconv.Itoa(portNumber))
-	for i := 0; i < 10; i++ {
-		if i > 0 {
-			time.Sleep(500 * time.Millisecond)
-		}
-
-		s.Debugger, err = godet.Connect("localhost:"+strconv.Itoa(portNumber), s.Options.Verbose)
-		if err == nil {
-			break
-		}
-
-		log.Println("[+] Connect", err)
-	}
-
-	if err != nil {
-		log.Fatal("[-] Unable to connect to the browser!")
-	}
-}
-
-func SetupConsoleLogging(s *State) {
-	//Log console
-	log.Println("[+] Setting up console events.")
-	s.Debugger.CallbackEvent("Log.entryAdded", func(params godet.Params) {
-		entry := params.Map("entry")
-		log.Println("LOG", entry["type"], entry["level"], entry["text"])
-	})
-
-	s.Debugger.CallbackEvent("Runtime.consoleAPICalled", func(params godet.Params) {
-		l := []interface{}{"CONSOLE", params["type"].(string)}
-
-		for _, a := range params["args"].([]interface{}) {
-			arg := a.(map[string]interface{})
-
-			if arg["value"] != nil {
-				l = append(l, arg["value"])
-			} else if arg["preview"] != nil {
-				arg := arg["preview"].(map[string]interface{})
-
-				v := arg["description"].(string) + "{"
-
-				for i, p := range arg["properties"].([]interface{}) {
-					if i > 0 {
-						v += ", "
-					}
-
-					prop := p.(map[string]interface{})
-					if prop["name"] != nil {
-						v += fmt.Sprintf("%q: ", prop["name"])
-					}
-
-					v += fmt.Sprintf("%v", prop["value"])
-				}
-
-				v += "}"
-				l = append(l, v)
-			} else {
-				l = append(l, arg["type"].(string))
-			}
-		}
-		log.Println(l...)
-	})
-}
-
-//Enable request interception using the specific requestPatterns
-func SetupRequestInterception(s *State, requestPatterns ...godet.RequestPattern) {
-	log.Println("[+] Setting up interception.")
-	s.Debugger.SetRequestInterception(requestPatterns ...)
-	responses := map[string]string{}
-	// Register a function to process the Network.reuqestIntercepted event
-	s.Debugger.CallbackEvent("Network.requestIntercepted", func(params godet.Params) {
-		iid := params.String("interceptionId")
-		rtype := params.String("resourceType")
-		reason := responses[rtype]
-		log.Println("[+] Request intercepted for", iid, rtype, params.Map("request")["url"])
-		if reason != "" {
-			log.Println("  abort with reason", reason)
-		}
-
-		// Alter HTML in request response
-		if s.Options.AlterDocument && rtype == "Document" && iid != "" {
-			res, err := s.Debugger.GetResponseBodyForInterception(iid)
-
-			if err != nil {
-				log.Println("[-] Unable to get intercepted response body!")
-			}
-
-			rawAlteredResponse, err := AlterDocument(res)
-			if err != nil{
-				log.Println("[-] Unable to alter HTML")
-			}
-
-			if rawAlteredResponse != "" {
-				log.Println("[+] Sending modified body")
-				s.Debugger.ContinueInterceptedRequest(iid, godet.ErrorReason(reason), rawAlteredResponse, "", "", "", nil)
-			}
-		} else {
-			s.Debugger.ContinueInterceptedRequest(iid, godet.ErrorReason(reason), "", "", "", "", nil)
-		}
-	})
-}
-
-func AlterDocument(debuggerResponse []byte) (string, error) {
+func AlterDocument(debuggerResponse string, headers map[string]interface{}) (string, error) {
 	alteredBody, err := processHtml(debuggerResponse)
 	if err != nil {
 		return "", err
 	}
 
-	alteredHeader := "Date: " + fmt.Sprintf("%s", time.Now().Format(time.RFC3339)) + "\r\n" +
-		"Connection : close\r\n" +
-		"Content-Length: " + strconv.Itoa(len(alteredBody)) + "\r\n" +
-		"Content-Type: text/html; charset=utf-8"
+	//gzip := false
+	alteredHeader := ""
+	for k, v := range headers {
+		switch strings.ToLower(k) {
+		case "content-length":
+			v = strconv.Itoa(len(alteredBody))
+			break
+		case "date":
+			v = fmt.Sprintf("%s", time.Now().Format(time.RFC3339))
+			break
+			//case "content-encoding":
+			//	ce := v.(string)
+			//	gzip = ce == "gzip"
+			//	break
+		}
+		alteredHeader += k + ": " + v.(string) + "\r\n"
+	}
+	alteredHeader += "\r\n"
 
-	rawAlteredResponse := base64.StdEncoding.EncodeToString([]byte("HTTP/1.1 200 OK" + "\r\n" + alteredHeader + "\r\n\r\n\r\n" + alteredBody))
+	// This does not seem needed at the moment
+	//if gzip {
+	//	alteredBody = gZipCompress(alteredBody)
+	//}
+
+	rawAlteredResponse := base64.StdEncoding.EncodeToString([]byte("HTTP/1.1 200 OK"+"\r\n"+alteredHeader+alteredBody))
 
 	return rawAlteredResponse, nil
 }
 
-//EnableAllEvents enables enables all debugger events
-func EnableAllEvents(s *State) {
-	log.Println("[+] Enabling all debugger events.")
-	s.Debugger.RuntimeEvents(true)
-	s.Debugger.NetworkEvents(true)
-	s.Debugger.PageEvents(true) //Not used at the moment, but enabling anyways
-	s.Debugger.DOMEvents(true)  //Not used at the moment, but enabling anyways
-	s.Debugger.LogEvents(true)
+//Enable request interception using the specific requestPatterns
+func SetupRequestInterception(s *State, requestPatterns []*gcdapi.NetworkRequestPattern) {
+	s.Target.Network.SetRequestInterception(requestPatterns)
+	s.Target.Subscribe("Network.requestIntercepted", func(target *gcd.ChromeTarget, v []byte) {
+
+		msg := &gcdapi.NetworkRequestInterceptedEvent{}
+		err := json.Unmarshal(v, msg)
+		if err != nil {
+			log.Fatalf("error unmarshalling event data: %v\n", err)
+		}
+		log.Println("Method: %s\n", msg.Method)
+		iid := msg.Params.InterceptionId
+		rtype := msg.Params.ResourceType
+		reason := msg.Params.ResponseErrorReason
+		url := msg.Params.Request.Url
+		responseHeaders := msg.Params.ResponseHeaders
+
+		log.Println("[+] Request intercepted for", iid, rtype, url)
+		if reason != "" {
+			log.Println("[-] Abort with reason", reason)
+		}
+
+		if s.Options.AlterDocument && rtype == "Document" && iid != "" {
+			res, encoded, err := target.Network.GetResponseBodyForInterception(iid)
+			if err != nil {
+				log.Println("[-] Unable to get intercepted response body!")
+			}
+			if encoded{
+				res, err = decodeBase64Response(res)
+				if err != nil {
+					log.Println("[-] Unable to decode body!")
+				}
+			}
+
+			rawAlteredResponse, err := AlterDocument(res, responseHeaders)
+			if err != nil {
+				log.Println("[-] Unable to alter HTML")
+			}
+
+			if rawAlteredResponse != "" {
+				log.Println("[+] Sending modified body")
+
+				_, err := target.Network.ContinueInterceptedRequest(iid, reason, rawAlteredResponse, "", "", "", nil, nil)
+				if err != nil {
+					log.Println(err)
+				}
+			}
+		} else {
+			target.Network.ContinueInterceptedRequest(iid, reason, "", "", "", "", nil, nil)
+		}
+	})
 }
 
-func main() {
-	portNumber := 9222
+func main(){
 	s := State{}
 	// This is silly, but this is just me preparing the code to use github.com/spf13/cobra
-	s.Options = DebuggerOptions {
-		Verbose : false,
-		EnableConsole : true,
+	s.Options = DebuggerOptions{
+		Verbose:       false,
+		EnableConsole: true,
 		AlterDocument: true,
-		AlterScript: true,
+		AlterScript:   true,
 	}
 
-	// Launch chrome with debugging port
-	err := OpenChrome(portNumber)
-	if err != nil{
-		log.Println("[-] Unable to start browser!")
-	}
+	s.Debugger = startGcd()
+	defer s.Debugger.ExitProcess()
 
-	// Get a debugger reference
-	SetupDebugger(&s, portNumber)
-	defer s.Debugger.Close()
-
+	s.Target = startTarget(s.Debugger)
 	//Create a channel to be able to signal a termination to our Chrome connection
 	s.Done = make(chan bool)
-
 	shouldWait := true
 
-	//Handle connection termination and expired debugging events
-	s.Debugger.CallbackEvent(godet.EventClosed, func(params godet.Params) {
-		log.Println("[-] Remote Debugger connection terminated!")
-		s.Done <- true
-	})
-
-	//Enable Console methods
-	SetupConsoleLogging(&s)
-
-	//Enable all debugger events
-	EnableAllEvents(&s)
 
 	//Set Network Request Interceptor Patterns for terminal logging
-	htmlRequestPattern := godet.RequestPattern{
+	htmlRequestPattern := gcdapi.NetworkRequestPattern {
 		UrlPattern:        "*",
 		ResourceType:      "Document",
 		InterceptionStage: "HeadersReceived",
 	}
 
-	jsRequestPattern := godet.RequestPattern{
+	jsRequestPattern := gcdapi.NetworkRequestPattern{
 		UrlPattern:        "*.js",
 		ResourceType:      "Script",
 		InterceptionStage: "HeadersReceived",
 	}
 
-	//Setup intercept event behavior
-	SetupRequestInterception(&s, htmlRequestPattern, jsRequestPattern)
+	reqPattern := []*gcdapi.NetworkRequestPattern{&jsRequestPattern, &htmlRequestPattern}
 
-	//Keep this running
+	SetupRequestInterception(&s, reqPattern)
+
 	if shouldWait {
 		log.Println("[+] Wait for events...")
-		<- s.Done
+		<-s.Done
 	}
 }
 
-func runCommand(commandString string) error {
-	parts := args.GetArgs(commandString)
-	cmd := exec.Command(parts[0], parts[1:]...)
-	return cmd.Start()
+func startGcd() *gcd.Gcd {
+	testDir = "/tmp/chrome-testing"
+	testPort = "9222"
+	debugger := gcd.NewChromeDebugger()
+	debugger.AddFlags(testStartupFlags)
+	debugger.StartProcess(testPath, testDir, testPort)
+	return debugger
 }
 
-func processHtml(body []byte) (string, error) {
-	bodyString := string(body[:])
-	r := strings.NewReader(bodyString)
+func startTarget(debugger *gcd.Gcd) *gcd.ChromeTarget {
+	target, err := debugger.NewTab()
+	if err != nil {
+		log.Fatalf("error getting new tab: %s\n", err)
+	}
+
+	// TODO: set based on verbose flag
+	target.DebugEvents(false)
+	target.DOM.Enable()
+	target.Console.Enable()
+	target.Page.Enable()
+	target.Debugger.Enable()
+	//This does not seem right, but will leave this here for now
+	target.Network.Enable(999999,999999,999999)
+	return target
+
+}
+
+func decodeBase64Response(res string) (string, error) {
+	l, err := base64.StdEncoding.DecodeString(res)
+	if err != nil{
+		return "", err
+	}
+
+	return string(l[:]), nil
+}
+
+
+func processHtml(body string) (string, error) {
+	r := strings.NewReader(body)
 	doc, err := goquery.NewDocumentFromReader(r)
 
 	if err != nil {
@@ -253,6 +224,7 @@ func processHtml(body []byte) (string, error) {
 	}
 	doc.Find("input").Each(func(i int, s *goquery.Selection) {
 		att, ex := s.Attr("type")
+		s.SetAttr("value", "TEST HERE")
 		if ex && att == "hidden" {
 			s.SetAttr("type", "")
 		}
@@ -273,4 +245,24 @@ func processHtml(body []byte) (string, error) {
 	})
 
 	return doc.Html()
+}
+
+func gZipCompress(content string) string {
+	var b bytes.Buffer
+	//btw 4 and 5
+	gz, err := gzip.NewWriterLevel(&b, -1)
+	if err != nil {
+		panic(err)
+	}
+	if _, err := gz.Write([]byte(content)); err != nil {
+		panic(err)
+	}
+	if err := gz.Flush(); err != nil {
+		panic(err)
+	}
+	if err := gz.Close(); err != nil {
+		panic(err)
+	}
+
+	return b.String()
 }
