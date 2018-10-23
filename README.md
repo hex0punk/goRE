@@ -7,7 +7,7 @@ If you want to learn more about how this idea came about and how I went about wr
 
 Right now the script intercepts requests, processes body responses and unhides hidden input. It also sets all `ng-if` and `*ngIf` attributes to true (for Angular 1.X and 2+). This can be helpful when you want to explore an Angular application and see what content is not rendered by Angular on page loads, as in some cases this could allow us to discover directories that are hidden to some users right away (note that `ng-if` does not hide or show input; rather, it decides whether to render an element on page loads). 
 
-While there are some options (i.e. `Verbose`, `EnableConsoleLogging`, etc.), those can only be set by changing the code. This is only temporarily, as I am working on making this an actual tool and not just a script.
+While there are some options (i.e. `Verbose`, `EnableConsoleLogging`, etc.), those can only be set by changing the code. This is only temporarily 
 
 ## Caveats
 - The tool will crash when accessing some web pages. I have not found the reason yet, though I will continue to troubleshoot it. This typically occurs here:
@@ -19,10 +19,32 @@ While there are some options (i.e. `Verbose`, `EnableConsoleLogging`, etc.), tho
    }
    ```
 
+## Running the PoC
+
+```
+go run main.go
+```
+You can change the following `DebuggerOptions` flags directly in the code:
+
+```golang
+type DebuggerOptions struct {
+	EnableConsole 	bool
+	Verbose       	bool
+
+	AlterDocument	bool
+	AlterScript		bool
+}
+```
+I am currentely working on a CLI tool to make use of this PoC and will be pushing updates to a feature branch for that. 
+
+## Caveats
+- Needs to run as root
+- Currentely working on duplicate captured requests.
+- User dir may need to be manually removed if interception of requests starts failing
 
 ## Immediate Needs
 - I have not found a JS beautifies and deobfuscation go library yet. Worse case scenario, I could either write one (kinda of a project of its own) or use node libraries via system calls.
-- I am working on adding interactive CLI
+- Working on adding interactive CLI
 
 ## Todo
  
