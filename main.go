@@ -64,10 +64,6 @@ func AlterDocument(debuggerResponse string, headers map[string]interface{}) (str
 		case "date":
 			v = fmt.Sprintf("%s", time.Now().Format(time.RFC3339))
 			break
-			//case "content-encoding":
-			//	ce := v.(string)
-			//	gzip = ce == "gzip"
-			//	break
 		}
 		alteredHeader += k + ": " + v.(string) + "\r\n"
 	}
@@ -103,6 +99,10 @@ func SetupRequestInterception(s *State, params *gcdapi.NetworkSetRequestIntercep
 		url := msg.Params.Request.Url
 		responseHeaders := msg.Params.ResponseHeaders
 
+		if msg.Params.IsNavigationRequest{
+			log.Print("\n\n\n\n")
+			log.Println("[?] Navigation REQUEST")
+		}
 		log.Println("[+] Request intercepted for", iid, rtype, url)
 		if reason != "" {
 			log.Println("[-] Abort with reason", reason)
@@ -202,8 +202,6 @@ func startTarget(s *State) {
 	target.Console.Enable()
 	target.Page.Enable()
 	target.Debugger.Enable()
-	//This does not seem right, but will leave this here for now
-	//target.Network.Enable(999999,999999,999999)
 	networkParams := &gcdapi.NetworkEnableParams{
 		MaxTotalBufferSize:    -1,
 		MaxResourceBufferSize: -1,
