@@ -96,16 +96,40 @@ func SetupRequestInterception(s *State, params *gcdapi.NetworkSetRequestIntercep
 		iid := msg.Params.InterceptionId
 		rtype := msg.Params.ResourceType
 		reason := msg.Params.ResponseErrorReason
-		url := msg.Params.Request.Url
+		//urlString := msg.Params.Request.Url
 		responseHeaders := msg.Params.ResponseHeaders
 
 		if msg.Params.IsNavigationRequest{
 			log.Print("\n\n\n\n")
 			log.Println("[?] Navigation REQUEST")
 		}
-		log.Println("[+] Request intercepted for", iid, rtype, url)
+		log.Println("[+] Request intercepted for", msg.Params)
 		if reason != "" {
 			log.Println("[-] Abort with reason", reason)
+		}
+
+		//u, err := url.Parse(urlString)
+		//if err != nil {
+		//	panic(err)
+		//}
+		//host, _, _ := net.SplitHostPort(u.Host)
+		//
+		//allowed := host == "deliveroo.co.uk"
+
+		if rtype == "Script" && iid != ""{
+			res, encoded, err := s.Target.Network.GetResponseBodyForInterception(iid)
+			if err != nil {
+				log.Println("[-] Unable to get intercepted response body!", err.Error())
+				target.Network.ContinueInterceptedRequest(iid, reason, "", "", "", "", nil, nil)
+			} else {
+				if encoded{
+					res, err = decodeBase64Response(res)
+					if err != nil {
+						log.Println("[-] Unable to decode body!")
+					}
+				}
+				go findAPIs(res)
+			}
 		}
 
 		if s.Options.AlterDocument && rtype == "Document" && iid != "" {
@@ -127,7 +151,7 @@ func SetupRequestInterception(s *State, params *gcdapi.NetworkSetRequestIntercep
 				}
 
 				if rawAlteredResponse != "" {
-					log.Println("[+] Sending modified body")
+					log.Print("[+] Sending modified body\n\n\n")
 
 					_, err := s.Target.Network.ContinueInterceptedRequest(iid, reason, rawAlteredResponse, "", "", "", nil, nil)
 					if err != nil {
@@ -161,12 +185,12 @@ func main(){
 
 	patterns := make([]*gcdapi.NetworkRequestPattern, 2)
 	patterns[0] = &gcdapi.NetworkRequestPattern{
-		UrlPattern: "*",
+		UrlPattern: "*zomato.com/*",
 		ResourceType: "Document",
 		InterceptionStage: "HeadersReceived",
 	}
 	patterns[1] = &gcdapi.NetworkRequestPattern{
-		UrlPattern:        "*.js",
+		UrlPattern:        "*zomato.com*.js",
 		ResourceType:      "Script",
 		InterceptionStage: "HeadersReceived",
 	}
@@ -272,4 +296,13 @@ func gZipCompress(content string) string {
 	}
 
 	return b.String()
+}
+
+func  findAPIs(content string){
+	words := strings.Fields(content)
+	for _, v := range words{
+		if strings.Contains(v, "/api/"){
+			log.Println("[+] API URI:",  v)
+		}
+	}
 }
