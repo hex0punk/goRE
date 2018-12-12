@@ -16,3 +16,11 @@
 *.swp
 *.swo
 *~
+
+# Project notes
+*scratchpad.md
+
+# Mac Stuff
+.DS*
+
+
