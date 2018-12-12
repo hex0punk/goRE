@@ -8,6 +8,15 @@
 - Impletnt showOptions as shown here: https://github.com/Ne0nd0g/merlin/blob/master/pkg/modules/modules.go
 - From the above, add show and set options as well, once reayd to add options to modules
 
+- Next thing: add options
+
+- Folder struct should be /data/generic/procesors/ /data/generic/inspectors
+- Very much needed, functionModifier module!
+
+- Very much needed, TESTS!
+- Very much needed, script building all existing plugins!
+
+- Test printing the registry
 
 ```
 	patterns[0] = &gcdapi.NetworkRequestPattern{

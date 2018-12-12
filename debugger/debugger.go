@@ -91,7 +91,16 @@ func (d *Debugger) SetupRequestInterception(params *gcdapi.NetworkSetRequestInte
 						log.Println("[-] Unable to decode body!")
 					}
 				}
-				go findAPIs(res)
+				//Run inspectors here
+				//TODO: abstract this as a debugger function
+				for _, v := range d.Modules.Inspectors{
+					//TODO call all inspectors as goroutines
+					err = v.Inspect(res)
+					if err != nil {
+						log.Println("[+] Inspector error: " + v.Registry.Name)
+					}
+				}
+				//go findAPIs(res)
 			}
 		}
 

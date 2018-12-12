@@ -21,22 +21,36 @@ type Registry struct {
 	Notes    string 	`json:"notes"`	// Additional information or notes about the module
 }
 
+// Option is a structure containing the keys for the object
+type Option struct {
+	Name 		string		`json:"name"` 		// Name of the option
+	Value 		string		`json:"value"` 		// Value of the option
+	Required 	bool		`json:"required"` 	// Is this a required option?
+	Flag 		string		`json:"flag"`		// The command line flag used for the option
+	Description string		`json:"description"`// A description of the option
+}
 type ProcessorModule struct {
 	Process	func(body string) (string, error)
 	Registry	Registry
+	Options 	[]Option 	`json:"options"`	// A list of configurable options/arguments for the module
 }
 
 type InspectorModule struct {
-	Inspector	Inspector
+	Inspect	func(body string) error
 	Registry	Registry
+	Options 	[]Option
 }
 
 type Processor interface {
+	Init()
+	GetOptions()  []Option
 	GetRegistry() Registry
 	Process(body string) (string, error)
 }
 
 type Inspector interface {
+	Init()
+	GetOptions()  []Option
 	GetRegistry() Registry
 	Inspect(body string) error
 }
@@ -67,6 +81,7 @@ func (m *Modules) InitProcessors(paths []string) error{
 			fmt.Println("unexpected type from processor symbol")
 			return err
 		}
+		processor.Init()
 		module.Registry = processor.GetRegistry()
 		module.Process = processor.Process
 		m.Processors = append(m.Processors, module)
@@ -100,8 +115,9 @@ func (m *Modules) InitInspectors(paths []string) error {
 			fmt.Println("unexpected type from processor symbol")
 			return err
 		}
+		inspector.Init()
 		module.Registry = inspector.GetRegistry()
-		module.Inspector = inspector
+		module.Inspect = inspector.Inspect
 		m.Inspectors = append(m.Inspectors, module)
 	}
 
@@ -112,8 +128,31 @@ func (p *ProcessorModule) ShowInfo(){
 	showInfo(p.Registry)
 }
 
-func (p *InspectorModule) ShowInfo(){
-	showInfo(p.Registry)
+func (i *InspectorModule) ShowInfo(){
+	showInfo(i.Registry)
+}
+
+// SetOption is used to change the passed in module option's value. Used when a user is configuring a module
+func (p *ProcessorModule) SetOption(option string, value string) (string, error){
+	// Verify this option exists
+	for k, v := range p.Options {
+		if option == v.Name {
+			p.Options[k].Value = value
+			return fmt.Sprintf("%s set to %s", v.Name, p.Options[k].Value), nil
+		}
+	}
+	return "", fmt.Errorf("invalid module option: %s", option)
+}
+
+func (i *InspectorModule) SetOption(option string, value string) (string, error){
+	// Verify this option exists
+	for k, v := range i.Options {
+		if option == v.Name {
+			i.Options[k].Value = value
+			return fmt.Sprintf("%s set to %s", v.Name, i.Options[k].Value), nil
+		}
+	}
+	return "", fmt.Errorf("invalid module option: %s", option)
 }
 
 func showInfo(r Registry){
