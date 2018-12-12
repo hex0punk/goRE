@@ -1,8 +1,13 @@
-package main
+package apifinder
 
-import "strings"
+import (
+	"log"
+	"strings"
+)
 
-func  findAPIs(content string){
+type apifinder string
+
+func  (a apifinder) Process(content string){
 	words := strings.Fields(content)
 	for _, v := range words{
 		if strings.Contains(v, "/api/"){
@@ -10,3 +15,5 @@ func  findAPIs(content string){
 		}
 	}
 }
+
+var Processor apifinder

@@ -1,3 +1,0 @@
-package base
-
-// Module structs

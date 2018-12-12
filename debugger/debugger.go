@@ -15,11 +15,10 @@ import (
 
 type Debugger struct {
 	ChromeProxy *gcd.Gcd
-	Done     chan bool
-	Options  Options
-	Target 	 *gcd.ChromeTarget
-	Preprocessors  []modules.Processor
-	Processors	   []modules.Processor
+	Done     		chan bool
+	Options  		Options
+	Target 	 		*gcd.ChromeTarget
+	Modules 		modules.Modules
 }
 
 type Options struct {
@@ -166,8 +165,8 @@ func decodeBase64Response(res string) (string, error) {
 func (d *Debugger) processHtml(body string) (string, error) {
 	result := body
 	var err error
-	for _, v := range d.Processors{
-		result, err = v.Process(result)
+	for _, v := range d.Modules.Processors{
+		result, err = v.Processor.Process(result)
 		if err != nil {
 			return "", err
 		}

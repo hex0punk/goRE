@@ -1,3 +1,14 @@
+# TODO
+- Add "Registry" struct for every module to describe itself
+- Add get registry 
+- Add an object for module
+- Make sure  to include path for file
+- Module Option should include the Flag property as shown for merlin exploit framework
+
+- Impletnt showOptions as shown here: https://github.com/Ne0nd0g/merlin/blob/master/pkg/modules/modules.go
+- From the above, add show and set options as well, once reayd to add options to modules
+
+
 ```
 	patterns[0] = &gcdapi.NetworkRequestPattern{
 		UrlPattern: "*" + s.Options.Scope + "/*",
