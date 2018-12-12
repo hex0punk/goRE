@@ -33,7 +33,7 @@ func (u unhide) Process(body string) (string, error){
 		if ex && att == "hidden" {
 			var v string
 			v, ex = s.Attr("name")
-			if ex { s.AfterHtml("<span style='color: white; background-color:black;'>" + v +"</span>") }
+			if ex { s.BeforeHtml("<span style='color: white; background-color:black;'>" + v +"</span>") }
 			s.SetAttr("type", "")
 		}
 	})
