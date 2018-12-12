@@ -17,10 +17,13 @@
 *.swo
 *~
 
-# Project notes
-*scratchpad.md
+# Project notes and temp stuff
+*.notes/
+*apis.txt
 
 # Mac Stuff
 .DS*
+
+
 
 
