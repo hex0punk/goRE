@@ -23,7 +23,7 @@ var (
 )
 
 var testStartupFlags = []string{"-na", "--disable-gpu", "--window-size=1200,800", "--auto-open-devtools-for-tabs","--disable-popup-blocking"}
-//var inspectors = []string{"./modules/generic/apifinder"}
+var inspectors = []string{"./data/modules/generic/apifinder/"}
 var processors = []string{"./data/modules/generic/unhider/", "./data/modules/angular/unhider/"}
 var scope = "zomato.com"
 
@@ -45,6 +45,11 @@ func main(){
 		os.Exit(1)
 	}
 
+	err = s.Modules.InitInspectors(inspectors)
+	if err != nil{
+		fmt.Println(err)
+		os.Exit(1)
+	}
 	// Setup the debugger
 	s.Debugger = debugger.Debugger{
 		Modules: s.Modules,

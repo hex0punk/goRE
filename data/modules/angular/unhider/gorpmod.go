@@ -6,19 +6,23 @@ import (
 	"strings"
 )
 
-type ngunhide string
+type ngunhide struct {
+	Registry	modules.Registry
+	Options		[]modules.Option
+}
 
-var(
-	registry = modules.Registry{
+func (n *ngunhide) Init(){
+	n.Registry = modules.Registry{
 		Name: "Ng-Unhider",
 		Author: []string{"codedharma", "hex0punk"},
 		Path: "./data/modules/angular/unhider/gorpmod.go",
 		Description: "Unhides elements hidden by angular ng-if or ngIf",
 		Notes: "This may break the functionality of some angular apps",
 	}
-)
+	n.Options = []modules.Option{}
+}
 
-func (u ngunhide) Process(body string) (string, error){
+func (n *ngunhide) Process(body string) (string, error){
 	r := strings.NewReader(body)
 	doc, err := goquery.NewDocumentFromReader(r)
 
@@ -43,8 +47,12 @@ func (u ngunhide) Process(body string) (string, error){
 	return doc.Html()
 }
 
-func (u ngunhide) GetRegistry() modules.Registry{
-	return registry
+func (n *ngunhide) GetRegistry() modules.Registry{
+	return n.Registry
+}
+
+func (n *ngunhide) GetOptions() []modules.Option{
+	return n.Options
 }
 
 var Processor ngunhide

@@ -7,18 +7,22 @@ import (
 	"strings"
 )
 
-type unhide string
+type unhide struct {
+	Registry modules.Registry
+	Options  []modules.Option
+}
 
-var(
-	registry = modules.Registry{
+func (u *unhide) Init(){
+	u.Registry = modules.Registry{
 		Name: "HTML-Unhider",
 		Author: []string{"codedharma", "hex0punk"},
 		Path: "./data/modules/generic/unhider/gorpmod.go",
 		Description: "Unhides input elements from responses and adds an indicator for the name attribute",
 	}
-)
+	u.Options = []modules.Option{}
+}
 
-func (u unhide) Process(body string) (string, error){
+func (u *unhide) Process(body string) (string, error){
 	fmt.Println("Running unhider module...")
 	r := strings.NewReader(body)
 	doc, err := goquery.NewDocumentFromReader(r)
@@ -48,8 +52,12 @@ func (u unhide) Process(body string) (string, error){
 	return doc.Html()
 }
 
-func (u unhide) GetRegistry() modules.Registry{
-	return registry
+func (u *unhide) GetRegistry() modules.Registry{
+	return u.Registry
+}
+
+func (u *unhide) GetOptions() []modules.Option{
+	return u.Options
 }
 
 var Processor unhide
