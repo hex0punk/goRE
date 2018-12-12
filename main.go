@@ -9,11 +9,11 @@ import (
 	"github.com/wirepair/gcd/gcdapi"
 	"log"
 	"os"
-	"plugin"
 )
 
 type State struct {
 	Debugger	debugger.Debugger
+	Modules     modules.Modules
 }
 
 var (
@@ -23,8 +23,8 @@ var (
 )
 
 var testStartupFlags = []string{"-na", "--disable-gpu", "--window-size=1200,800", "--auto-open-devtools-for-tabs","--disable-popup-blocking"}
-//var premodules = []string{"./modules/generic/apifinder"}
-var processormodules = []string{"./modules/unhider/", "./modules/angular/unhider/"}
+//var inspectors = []string{"./modules/generic/apifinder"}
+var processors = []string{"./data/modules/generic/unhider/", "./data/modules/angular/unhider/"}
 var scope = "zomato.com"
 
 func init() {
@@ -33,51 +33,21 @@ func init() {
 	flag.StringVar(&testPort, "port", "9222", "Debugger port")
 }
 
-//TODO: this should take a refrence for the container where to put the loaded
-// modules and a list of path as string array. That way we can call this function
-// for preprocessors and  postprocessors
-func LoadProcessors(s *State, procList []string) error{
-	// TODO: Put this in a loop
-	//Debugger.Processors = make([]modules.Processor, 2)
-	for _, v := range procList{
-		fmt.Println("[+] Loading module: " + v)
-		mod := v + "gorpmod.so"
-		plug, err := plugin.Open(mod)
-		if err != nil {
-			return err
-		}
-
-		// look up a symbol (an exported function or variable)
-		// in this case, variable Greeter
-		symProcessor, err := plug.Lookup("Processor")
-		if err != nil {
-			return err
-		}
-
-		// Assert that loaded symbol is of a desired type
-		// in this case interface type Greeter (defined above)
-		var processor modules.Processor
-		//processor = new(modules.Processor)
-		processor, ok := symProcessor.(modules.Processor)
-		if !ok {
-			fmt.Println("unexpected type from module symbol")
-			return err
-		}
-		s.Debugger.Processors = append(s.Debugger.Processors, processor)
-	}
-
-	return nil
-}
-
 func main(){
 	var err error
 	s := State{}
 
-	s.Debugger = debugger.Debugger{}
-	err = LoadProcessors(&s, processormodules)
+	// Load the modules
+	s.Modules = modules.Modules{}
+	err = s.Modules.InitProcessors(processors)
 	if err != nil{
 		fmt.Println(err)
 		os.Exit(1)
+	}
+
+	// Setup the debugger
+	s.Debugger = debugger.Debugger{
+		Modules: s.Modules,
 	}
 	s.Debugger.Options = debugger.Options{
 		Verbose:       false,
@@ -86,6 +56,7 @@ func main(){
 		AlterScript:   true,
 	}
 
+	// TODO: This should be abstracted in the debugger struct
 	s.Debugger.ChromeProxy = startGcd()
 	defer s.Debugger.ChromeProxy.ExitProcess()
 

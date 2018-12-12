@@ -2,11 +2,21 @@ package main
 
 import (
 	"fmt"
+	"github.com/DharmaOfCode/gorp/modules"
 	"github.com/PuerkitoBio/goquery"
 	"strings"
 )
 
 type unhide string
+
+var(
+	registry = modules.Registry{
+		Name: "HTML-Unhider",
+		Author: []string{"codedharma", "hex0punk"},
+		Path: "./data/modules/generic/unhider/gorpmod.go",
+		Description: "Unhides input elements from responses and adds an indicator for the name attribute",
+	}
+)
 
 func (u unhide) Process(body string) (string, error){
 	fmt.Println("Running unhider module...")
@@ -37,4 +47,9 @@ func (u unhide) Process(body string) (string, error){
 
 	return doc.Html()
 }
+
+func (u unhide) GetRegistry() modules.Registry{
+	return registry
+}
+
 var Processor unhide
