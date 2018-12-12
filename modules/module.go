@@ -22,7 +22,7 @@ type Registry struct {
 }
 
 type ProcessorModule struct {
-	Processor	Processor
+	Process	func(body string) (string, error)
 	Registry	Registry
 }
 
@@ -68,7 +68,7 @@ func (m *Modules) InitProcessors(paths []string) error{
 			return err
 		}
 		module.Registry = processor.GetRegistry()
-		module.Processor = processor
+		module.Process = processor.Process
 		m.Processors = append(m.Processors, module)
 	}
 	return nil

@@ -166,7 +166,7 @@ func (d *Debugger) processHtml(body string) (string, error) {
 	result := body
 	var err error
 	for _, v := range d.Modules.Processors{
-		result, err = v.Processor.Process(result)
+		result, err = v.Process(result)
 		if err != nil {
 			return "", err
 		}
