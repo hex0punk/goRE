@@ -2,6 +2,7 @@ package modules
 
 import (
 	"fmt"
+	"github.com/DharmaOfCode/gorp/base"
 	"github.com/fatih/color"
 	"plugin"
 )
@@ -26,7 +27,6 @@ type Option struct {
 	Name 		string		`json:"name"` 		// Name of the option
 	Value 		string		`json:"value"` 		// Value of the option
 	Required 	bool		`json:"required"` 	// Is this a required option?
-	Flag 		string		`json:"flag"`		// The command line flag used for the option
 	Description string		`json:"description"`// A description of the option
 }
 type ProcessorModule struct {
@@ -55,11 +55,11 @@ type Inspector interface {
 	Inspect(body string) error
 }
 
-func (m *Modules) InitProcessors(paths []string) error{
-	for _, v := range paths{
+func (m *Modules) InitProcessors(mods []base.ModuleConfig) error{
+	for _, v := range mods{
 		module := ProcessorModule{}
-		fmt.Println("[+] Loading module: " + v)
-		mod := v + "gorpmod.so"
+		fmt.Println("[+] Loading module: " + v.Path)
+		mod := v.Path + "gorpmod.so"
 		plug, err := plugin.Open(mod)
 		if err != nil {
 			return err
@@ -89,11 +89,11 @@ func (m *Modules) InitProcessors(paths []string) error{
 	return nil
 }
 
-func (m *Modules) InitInspectors(paths []string) error {
-	for _, v := range paths{
+func (m *Modules) InitInspectors(mods []base.ModuleConfig) error {
+	for _, v := range mods{
 		module := InspectorModule{}
-		fmt.Println("[+] Loading module: " + v)
-		mod := v + "gorpmod.so"
+		fmt.Println("[+] Loading module: " + v.Path)
+		mod := v.Path + "gorpmod.so"
 		plug, err := plugin.Open(mod)
 		if err != nil {
 			return err

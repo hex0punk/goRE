@@ -3,8 +3,10 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/DharmaOfCode/gorp/base"
 	"github.com/DharmaOfCode/gorp/debugger"
 	"github.com/DharmaOfCode/gorp/modules"
+	"github.com/spf13/viper"
 	"github.com/wirepair/gcd"
 	"github.com/wirepair/gcd/gcdapi"
 	"log"
@@ -14,18 +16,19 @@ import (
 type State struct {
 	Debugger	debugger.Debugger
 	Modules     modules.Modules
+	ModPath		string
+	Run			bool
+	GetInfo		bool
 }
 
 var (
+	cfgFile string
+	config *base.Configuration
+
 	testPath       string
 	testDir        string
 	testPort       string
 )
-
-var testStartupFlags = []string{"-na", "--disable-gpu", "--window-size=1200,800", "--auto-open-devtools-for-tabs","--disable-popup-blocking"}
-var inspectors = []string{"./data/modules/generic/apifinder/"}
-var processors = []string{"./data/modules/generic/unhider/", "./data/modules/angular/unhider/"}
-var scope = "zomato.com"
 
 func init() {
 	flag.StringVar(&testPath, "chrome", "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", "path to chrome")
@@ -33,19 +36,30 @@ func init() {
 	flag.StringVar(&testPort, "port", "9222", "Debugger port")
 }
 
-func main(){
-	var err error
+func ParseCmdLine() *State {
 	s := State{}
+	flag.StringVar(&cfgFile, "c", "", "configuration file path")
+	flag.StringVar(&s.ModPath, "m", "", "path of module to get info for")
+	flag.BoolVar(&s.Run, "r", true, "run gorp")
+	flag.BoolVar(&s.GetInfo, "i", false, "run gorp")
+
+	flag.Parse()
+	return &s
+}
+
+func RunGorp(s *State){
+	initConfig()
+	var err error
 
 	// Load the modules
 	s.Modules = modules.Modules{}
-	err = s.Modules.InitProcessors(processors)
+	err = s.Modules.InitProcessors(config.Modules.Processors)
 	if err != nil{
 		fmt.Println(err)
 		os.Exit(1)
 	}
 
-	err = s.Modules.InitInspectors(inspectors)
+	err = s.Modules.InitInspectors(config.Modules.Inspectors)
 	if err != nil{
 		fmt.Println(err)
 		os.Exit(1)
@@ -55,7 +69,7 @@ func main(){
 		Modules: s.Modules,
 	}
 	s.Debugger.Options = debugger.Options{
-		Verbose:       false,
+		Verbose:       config.Verbose,
 		EnableConsole: true,
 		AlterDocument: true,
 		AlterScript:   true,
@@ -71,13 +85,20 @@ func main(){
 	shouldWait := true
 
 	patterns := make([]*gcdapi.NetworkRequestPattern, 2)
+	//Default is everything!
+	docPattern := "*"
+	jsPattern := "*"
+	if config.Scope != ""{
+		docPattern = "*" + config.Scope + "/*"
+		jsPattern = "*" + config.Scope  + "*.js"
+	}
 	patterns[0] = &gcdapi.NetworkRequestPattern{
-		UrlPattern: "*" + s.Debugger.Options.Scope + "/*",
+		UrlPattern: docPattern,
 		ResourceType: "Document",
 		InterceptionStage: "HeadersReceived",
 	}
 	patterns[1] = &gcdapi.NetworkRequestPattern{
-		UrlPattern:        "*" + s.Debugger.Options.Scope + "*.js",
+		UrlPattern:        jsPattern,
 		ResourceType:      "Script",
 		InterceptionStage: "HeadersReceived",
 	}
@@ -91,13 +112,46 @@ func main(){
 	}
 }
 
+func GetModInfo(s *State){
+	//TODO: implement
+	fmt.Println(s.ModPath)
+}
+
+func main(){
+	s := ParseCmdLine()
+	if s.GetInfo{
+		GetModInfo(s)
+	} else {
+		RunGorp(s)
+	}
+}
+
+func initConfig(){
+	if cfgFile != "" {
+		// Use config file from the flag.
+		viper.SetConfigFile(cfgFile)
+	} else {
+		// Find in base
+		viper.SetConfigName("config")
+		viper.AddConfigPath(".")
+	}
+
+	err := viper.ReadInConfig()
+	if err != nil {
+		panic(fmt.Errorf("Fatal error config file: %s \n", err))
+		os.Exit(1)
+	}
+
+	err = viper.Unmarshal(&config)
+}
+
 // TODO: Move this to debugger
 func startGcd() *gcd.Gcd {
 	testDir = "/tmp/chrome-testing"
 	testPort = "9222"
 	debugger := gcd.NewChromeDebugger()
 	//debugger.DeleteProfileOnExit()
-	debugger.AddFlags(testStartupFlags)
+	debugger.AddFlags(config.Flags)
 	debugger.StartProcess(testPath, testDir, testPort)
 	return debugger
 }
