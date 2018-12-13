@@ -7,7 +7,7 @@ _If you want to learn more about how this idea came about and how I went about w
 
 gorp is a Chrome dev protocol engine created for pentesters and hackers. It leverages the Chrome Dev Tool protocol to intercept HTTP responses as you conduct pentest with Chrome via the use of go plugins.
 
-## gorp plugin
+## gorp plugins
 Gorp plugins are essentially modules that you can use to modify or audit web responses. There are two different types of plugins (so far):
 
 - **Processors:** processors plugins alter the response before it is rendered in the browser. This can be useful for things like modifying JavaScript code, changing HTML directives, unhiding elements in the page, highlighting areas of interest, etc.
