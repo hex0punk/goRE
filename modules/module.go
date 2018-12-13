@@ -15,6 +15,7 @@ type Modules struct {
 // Module is a structure containing the base information or template for modules
 type Registry struct {
 	Name     string  	`json:"name"` 	// Name of the module
+	DocTypes []string 	`json:"docTypes"` 	// Type of document
 	Author   []string 	`json:"author"`	// A list of module authors
 	Credits	 []string	`json:"credits"` // A list of people to credit for underlying tool or techniques
 	Path     string 	`json:"path"`	// Path to the module
@@ -30,13 +31,13 @@ type Option struct {
 	Description string		`json:"description"`// A description of the option
 }
 type ProcessorModule struct {
-	Process	func(body string) (string, error)
+	Process	func(body string, docType string) (string, error)
 	Registry	Registry
 	Options 	[]Option 	`json:"options"`	// A list of configurable options/arguments for the module
 }
 
 type InspectorModule struct {
-	Inspect	func(body string) error
+	Inspect	func(body string, docType string) error
 	Registry	Registry
 	Options 	[]Option
 }
@@ -45,14 +46,14 @@ type Processor interface {
 	Init()
 	GetOptions()  []Option
 	GetRegistry() Registry
-	Process(body string) (string, error)
+	Process(body string, docType string) (string, error)
 }
 
 type Inspector interface {
 	Init()
 	GetOptions()  []Option
 	GetRegistry() Registry
-	Inspect(body string) error
+	Inspect(body string, docType string) error
 }
 
 func (m *Modules) InitProcessors(mods []base.ModuleConfig) error{
@@ -172,6 +173,10 @@ func (i *InspectorModule) SetOption(option string, value string) (string, error)
 
 func showInfo(r Registry){
 	color.Yellow("Module:\r\n\t%s\r\n", r.Name)
+	color.Yellow("Authors:")
+	for d := range r.DocTypes{
+		color.Yellow("\t%s", r.DocTypes[d])
+	}
 	color.Yellow("Authors:")
 	for a := range r.Author {
 		color.Yellow("\t%s", r.Author[a])

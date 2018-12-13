@@ -16,6 +16,7 @@ type apifinder struct {
 func (a *apifinder) Init() {
 	a.Registry = modules.Registry{
 		Name:        "APIFinder",
+		DocTypes:     []string{"Document", "Script"},
 		Author:      []string{"codedharma", "hex0punk"},
 		Path:        "./data/modules/generic/apifinder/gorpmod.go",
 		Description: "Finds apis in javascript code and save it to a chosen file",
@@ -37,7 +38,7 @@ func (a *apifinder) Init() {
 	})
 }
 
-func  (a *apifinder) Inspect(content string) error{
+func  (a *apifinder) Inspect(content string, docType string) error{
 	var f *os.File
 	var err error
 	////Create file if one was not provided
