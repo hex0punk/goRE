@@ -11,6 +11,7 @@ import (
 	"github.com/wirepair/gcd/gcdapi"
 	"log"
 	"os"
+	"strings"
 )
 
 type State struct {
@@ -113,7 +114,25 @@ func RunGorp(s *State){
 }
 
 func GetModInfo(s *State){
-	//TODO: implement
+	s.Modules = modules.Modules{}
+	if strings.Contains(s.ModPath, "processors"){
+		p, err := s.Modules.GetProcessor(s.ModPath)
+		if err != nil {
+			log.Println("[+] Unable to find processor " + s.ModPath)
+		} else {
+			p.ShowInfo()
+		}
+	} else if strings.Contains(s.ModPath, "inspectors"){
+		i, err := s.Modules.GetInspector(s.ModPath)
+		if err != nil {
+			log.Println("[+] Unable to find processor " + s.ModPath)
+		} else {
+			i.ShowInfo()
+		}
+	} else {
+		log.Println("[+] Unable to find module " + s.ModPath)
+	}
+
 	fmt.Println(s.ModPath)
 }
 
