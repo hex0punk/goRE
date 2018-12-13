@@ -15,6 +15,7 @@ type unhide struct {
 func (u *unhide) Init(){
 	u.Registry = modules.Registry{
 		Name: "HTML-Unhider",
+		DocTypes:     []string{"Document"},
 		Author: []string{"codedharma", "hex0punk"},
 		Path: "./data/modules/generic/unhider/gorpmod.go",
 		Description: "Unhides input elements from responses and adds an indicator for the name attribute",
@@ -22,7 +23,10 @@ func (u *unhide) Init(){
 	u.Options = []modules.Option{}
 }
 
-func (u *unhide) Process(body string) (string, error){
+func (u *unhide) Process(body string, docType string) (string, error){
+	if docType != "Document"{
+		return body, nil
+	}
 	fmt.Println("Running unhider module...")
 	r := strings.NewReader(body)
 	doc, err := goquery.NewDocumentFromReader(r)

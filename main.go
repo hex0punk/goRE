@@ -15,20 +15,20 @@ import (
 )
 
 type State struct {
-	Debugger	debugger.Debugger
-	Modules     modules.Modules
-	ModPath		string
-	Run			bool
-	GetInfo		bool
+	Debugger debugger.Debugger
+	Modules  modules.Modules
+	ModPath  string
+	Run      bool
+	GetInfo  bool
 }
 
 var (
 	cfgFile string
-	config *base.Configuration
+	config  *base.Configuration
 
-	testPath       string
-	testDir        string
-	testPort       string
+	testPath string
+	testDir  string
+	testPort string
 )
 
 func init() {
@@ -48,20 +48,20 @@ func ParseCmdLine() *State {
 	return &s
 }
 
-func RunGorp(s *State){
+func RunGorp(s *State) {
 	initConfig()
 	var err error
 
 	// Load the modules
 	s.Modules = modules.Modules{}
 	err = s.Modules.InitProcessors(config.Modules.Processors)
-	if err != nil{
+	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 
 	err = s.Modules.InitInspectors(config.Modules.Inspectors)
-	if err != nil{
+	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
@@ -72,8 +72,6 @@ func RunGorp(s *State){
 	s.Debugger.Options = debugger.Options{
 		Verbose:       config.Verbose,
 		EnableConsole: true,
-		AlterDocument: true,
-		AlterScript:   true,
 	}
 
 	// TODO: This should be abstracted in the debugger struct
@@ -89,13 +87,13 @@ func RunGorp(s *State){
 	//Default is everything!
 	docPattern := "*"
 	jsPattern := "*"
-	if config.Scope != ""{
+	if config.Scope != "" {
 		docPattern = "*" + config.Scope + "/*"
-		jsPattern = "*" + config.Scope  + "*.js"
+		jsPattern = "*" + config.Scope + "*.js"
 	}
 	patterns[0] = &gcdapi.NetworkRequestPattern{
-		UrlPattern: docPattern,
-		ResourceType: "Document",
+		UrlPattern:        docPattern,
+		ResourceType:      "Document",
 		InterceptionStage: "HeadersReceived",
 	}
 	patterns[1] = &gcdapi.NetworkRequestPattern{
@@ -113,16 +111,16 @@ func RunGorp(s *State){
 	}
 }
 
-func GetModInfo(s *State){
+func GetModInfo(s *State) {
 	s.Modules = modules.Modules{}
-	if strings.Contains(s.ModPath, "processors"){
+	if strings.Contains(s.ModPath, "processors") {
 		p, err := s.Modules.GetProcessor(s.ModPath)
 		if err != nil {
 			log.Println("[+] Unable to find processor " + s.ModPath)
 		} else {
 			p.ShowInfo()
 		}
-	} else if strings.Contains(s.ModPath, "inspectors"){
+	} else if strings.Contains(s.ModPath, "inspectors") {
 		i, err := s.Modules.GetInspector(s.ModPath)
 		if err != nil {
 			log.Println("[+] Unable to find processor " + s.ModPath)
@@ -136,16 +134,16 @@ func GetModInfo(s *State){
 	fmt.Println(s.ModPath)
 }
 
-func main(){
+func main() {
 	s := ParseCmdLine()
-	if s.GetInfo{
+	if s.GetInfo {
 		GetModInfo(s)
 	} else {
 		RunGorp(s)
 	}
 }
 
-func initConfig(){
+func initConfig() {
 	if cfgFile != "" {
 		// Use config file from the flag.
 		viper.SetConfigFile(cfgFile)

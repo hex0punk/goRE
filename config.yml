@@ -6,6 +6,7 @@ modules:
     - path: "/data/modules/processors/angular/unhider/"
       options: {}
     - path: "/data/modules/processors/generic/unhider/"
+      options: {}
   inspectors:
     - path: "/data/modules/inspectors/generic/apifinder/"
       options: {}

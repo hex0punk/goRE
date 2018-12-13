@@ -14,6 +14,7 @@ type ngunhide struct {
 func (n *ngunhide) Init(){
 	n.Registry = modules.Registry{
 		Name: "Ng-Unhider",
+		DocTypes:     []string{"Document"},
 		Author: []string{"codedharma", "hex0punk"},
 		Path: "./data/modules/angular/unhider/gorpmod.go",
 		Description: "Unhides elements hidden by angular ng-if or ngIf",
@@ -22,7 +23,10 @@ func (n *ngunhide) Init(){
 	n.Options = []modules.Option{}
 }
 
-func (n *ngunhide) Process(body string) (string, error){
+func (n *ngunhide) Process(body string, docType string) (string, error){
+	if docType != "Document"{
+		return body, nil
+	}
 	r := strings.NewReader(body)
 	doc, err := goquery.NewDocumentFromReader(r)
 

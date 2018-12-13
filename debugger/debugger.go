@@ -24,8 +24,6 @@ type Debugger struct {
 type Options struct {
 	EnableConsole bool
 	Verbose       bool
-	AlterDocument bool
-	AlterScript   bool
 	Scope 		  string
 }
 
@@ -35,7 +33,6 @@ func (d *Debugger) StartTarget() {
 		log.Fatalf("error getting new tab: %s\n", err)
 	}
 
-	// TODO: set based on verbose flag
 	target.DebugEvents(d.Options.Verbose)
 	target.DOM.Enable()
 	target.Console.Enable()
@@ -66,45 +63,20 @@ func (d *Debugger) SetupRequestInterception(params *gcdapi.NetworkSetRequestInte
 			log.Fatalf("error unmarshalling event data: %v\n", err)
 		}
 		iid := msg.Params.InterceptionId
-		rtype := msg.Params.ResourceType
 		reason := msg.Params.ResponseErrorReason
+		rtype := msg.Params.ResourceType
 		responseHeaders := msg.Params.ResponseHeaders
 
 		if msg.Params.IsNavigationRequest{
 			log.Print("\n\n\n\n")
 			log.Println("[?] Navigation REQUEST")
 		}
-		log.Println("[+] Request intercepted for", msg.Params)
+		log.Println("[+] Request intercepted for", msg.Params.Request.Url)
 		if reason != "" {
 			log.Println("[-] Abort with reason", reason)
 		}
 
-		if rtype == "Script" && iid != ""{
-			res, encoded, err := d.Target.Network.GetResponseBodyForInterception(iid)
-			if err != nil {
-				log.Println("[-] Unable to get intercepted response body!", err.Error())
-				target.Network.ContinueInterceptedRequest(iid, reason, "", "", "", "", nil, nil)
-			} else {
-				if encoded{
-					res, err = decodeBase64Response(res)
-					if err != nil {
-						log.Println("[-] Unable to decode body!")
-					}
-				}
-				//Run inspectors here
-				//TODO: abstract this as a debugger function
-				for _, v := range d.Modules.Inspectors{
-					//TODO call all inspectors as goroutines
-					err = v.Inspect(res)
-					if err != nil {
-						log.Println("[+] Inspector error: " + v.Registry.Name)
-					}
-				}
-				//go findAPIs(res)
-			}
-		}
-
-		if d.Options.AlterDocument && rtype == "Document" && iid != "" {
+		if iid != "" {
 			res, encoded, err := d.Target.Network.GetResponseBodyForInterception(iid)
 			if err != nil {
 				log.Println("[-] Unable to get intercepted response body!", err.Error())
@@ -117,18 +89,22 @@ func (d *Debugger) SetupRequestInterception(params *gcdapi.NetworkSetRequestInte
 					}
 				}
 
-				rawAlteredResponse, err := d.AlterDocument(res, responseHeaders)
-				if err != nil {
-					log.Println("[-] Unable to alter HTML")
-				}
+				d.InspectDocument(res, rtype)
 
-				if rawAlteredResponse != "" {
-					log.Print("[+] Sending modified body\n\n\n")
-
-					_, err := d.Target.Network.ContinueInterceptedRequest(iid, reason, rawAlteredResponse, "", "", "", nil, nil)
+				if rtype != ""{
+					rawAlteredResponse, err := d.AlterDocument(res, rtype, responseHeaders)
 					if err != nil {
-						log.Println(err)
+						log.Println("[-] Unable to alter HTML")
 					}
+
+						log.Print("[+] Sending modified body\n\n\n")
+
+						_, err = d.Target.Network.ContinueInterceptedRequest(iid, reason, rawAlteredResponse, "", "", "", nil, nil)
+						if err != nil {
+							log.Println(err)
+						}
+				} else {
+					d.Target.Network.ContinueInterceptedRequest(iid, reason, "", "", "", "", nil, nil)
 				}
 			}
 		} else {
@@ -137,8 +113,8 @@ func (d *Debugger) SetupRequestInterception(params *gcdapi.NetworkSetRequestInte
 	})
 }
 
-func (d *Debugger) AlterDocument(debuggerResponse string, headers map[string]interface{}) (string, error) {
-	alteredBody, err := d.processHtml(debuggerResponse)
+func (d *Debugger) AlterDocument(debuggerResponse string, docType string, headers map[string]interface{}) (string, error) {
+	alteredBody, err := d.processBody(debuggerResponse, docType)
 	if err != nil {
 		return "", err
 	}
@@ -162,6 +138,17 @@ func (d *Debugger) AlterDocument(debuggerResponse string, headers map[string]int
 	return rawAlteredResponse, nil
 }
 
+func (d *Debugger) InspectDocument(res string, docType string){
+	//TODO: abstract this as a debugger function
+	for _, v := range d.Modules.Inspectors{
+		//TODO call all inspectors as goroutines
+		err := v.Inspect(res, docType)
+		if err != nil {
+			log.Println("[+] Inspector error: " + v.Registry.Name)
+		}
+	}
+}
+
 func decodeBase64Response(res string) (string, error) {
 	l, err := base64.StdEncoding.DecodeString(res)
 	if err != nil{
@@ -171,11 +158,11 @@ func decodeBase64Response(res string) (string, error) {
 	return string(l[:]), nil
 }
 
-func (d *Debugger) processHtml(body string) (string, error) {
+func (d *Debugger) processBody(body string, docType string) (string, error) {
 	result := body
 	var err error
 	for _, v := range d.Modules.Processors{
-		result, err = v.Process(result)
+		result, err = v.Process(result, docType)
 		if err != nil {
 			return "", err
 		}
