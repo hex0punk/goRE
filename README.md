@@ -17,11 +17,11 @@ Gorp plugins are essentially modules that you can use to modify or audit web res
 ## Using gorp
 1. Create a configuration file that uses the structure used by the `config.yaml` file in the root directory of this repo.
 2. You can find information about any plugin by running this command:
-   ```
+   ```bash
    go run main.go -i -m "/the/path/of/the/module/"
    ```
 3. To run gorp:
-   ```
+   ```bash
    go run main.g -c "./path/to/your/config/file.yml"
    ```
    
@@ -43,14 +43,14 @@ The power of gorp is in the plugins. Creating your own plugin is simple.
    ```
 4. Make sure to export the symbol at the end of your plugin, like so:
 
-   ```
+   ```golang
    var Inspector apifinder
    ```
  5. Compile your plugin like so:
  
- ```
- go build -buildmode=plugin -o gorpmod.so gorpmod.go
- ```
+    ```bash
+    go build -buildmode=plugin -o gorpmod.so gorpmod.go
+    ```
  6. Now you are ready to use your plugin with gorp. 
 
 
