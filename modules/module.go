@@ -2,6 +2,7 @@ package modules
 
 import (
 	"fmt"
+	"github.com/DharmaOfCode/gorp/base"
 	"github.com/fatih/color"
 	"plugin"
 )
@@ -26,7 +27,6 @@ type Option struct {
 	Name 		string		`json:"name"` 		// Name of the option
 	Value 		string		`json:"value"` 		// Value of the option
 	Required 	bool		`json:"required"` 	// Is this a required option?
-	Flag 		string		`json:"flag"`		// The command line flag used for the option
 	Description string		`json:"description"`// A description of the option
 }
 type ProcessorModule struct {
@@ -55,55 +55,73 @@ type Inspector interface {
 	Inspect(body string) error
 }
 
-func (m *Modules) InitProcessors(paths []string) error{
-	for _, v := range paths{
-		module := ProcessorModule{}
-		fmt.Println("[+] Loading module: " + v)
-		mod := v + "gorpmod.so"
-		plug, err := plugin.Open(mod)
+func (m *Modules) InitProcessors(mods []base.ModuleConfig) error{
+	for _, v := range mods{
+		module, err := m.GetProcessor(v.Path)
 		if err != nil {
 			return err
 		}
-
-		// look up a symbol (an exported function or variable)
-		// in this case, variable Greeter
-		symProcessor, err := plug.Lookup("Processor")
-		if err != nil {
-			return err
-		}
-
-		// Assert that loaded symbol is of a desired type
-		// in this case interface type Greeter (defined above)
-		var processor Processor
-		//processor = new(modules.Processor)
-		processor, ok := symProcessor.(Processor)
-		if !ok {
-			fmt.Println("unexpected type from processor symbol")
-			return err
-		}
-		processor.Init()
-		module.Registry = processor.GetRegistry()
-		module.Process = processor.Process
-		m.Processors = append(m.Processors, module)
+		m.Processors = append(m.Processors, *module)
 	}
 	return nil
 }
 
-func (m *Modules) InitInspectors(paths []string) error {
-	for _, v := range paths{
-		module := InspectorModule{}
-		fmt.Println("[+] Loading module: " + v)
-		mod := v + "gorpmod.so"
-		plug, err := plugin.Open(mod)
+func (m *Modules) GetProcessor(path string) (*ProcessorModule, error) {
+	module := ProcessorModule{}
+	fmt.Println("[+] Loading module: " + path)
+	mod := "." + path + "gorpmod.so"
+	plug, err := plugin.Open(mod)
+	if err != nil {
+		return nil, err
+	}
+
+	// look up a symbol (an exported function or variable)
+	// in this case, variable Greeter
+	symProcessor, err := plug.Lookup("Processor")
+	if err != nil {
+		return nil, err
+	}
+
+	// Assert that loaded symbol is of a desired type
+	// in this case interface type Greeter (defined above)
+	var processor Processor
+	//processor = new(modules.Processor)
+	processor, ok := symProcessor.(Processor)
+	if !ok {
+		fmt.Println("unexpected type from processor symbol")
+		return nil, err
+	}
+	processor.Init()
+	module.Registry = processor.GetRegistry()
+	module.Process = processor.Process
+	return &module, nil
+}
+
+func (m *Modules) InitInspectors(mods []base.ModuleConfig) error {
+	for _, v := range mods{
+		module, err := m.GetInspector(v.Path)
 		if err != nil {
 			return err
+		}
+		m.Inspectors = append(m.Inspectors, *module)
+	}
+	return nil
+}
+
+func (m *Modules) GetInspector(path string) (*InspectorModule, error) {
+		module := InspectorModule{}
+		fmt.Println("[+] Loading module: " + path)
+		mod := "." + path + "gorpmod.so"
+		plug, err := plugin.Open(mod)
+		if err != nil {
+			return nil, err
 		}
 
 		// look up a symbol (an exported function or variable)
 		// in this case, variable Greeter
 		symProcessor, err := plug.Lookup("Inspector")
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		// Assert that loaded symbol is of a desired type
@@ -113,15 +131,12 @@ func (m *Modules) InitInspectors(paths []string) error {
 		inspector, ok := symProcessor.(Inspector)
 		if !ok {
 			fmt.Println("unexpected type from processor symbol")
-			return err
+			return nil, err
 		}
 		inspector.Init()
 		module.Registry = inspector.GetRegistry()
 		module.Inspect = inspector.Inspect
-		m.Inspectors = append(m.Inspectors, module)
-	}
-
-	return nil
+		return &module, nil
 }
 
 func (p *ProcessorModule) ShowInfo(){
