@@ -1,5 +1,5 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/DharmaOfCode/gorp)](https://goreportcard.com/report/github.com/DharmaOfCode/gorp)
-(https://goreportcard.com/report/github.com/DharmaOfCode/gorp)[![GoDoc](https://godoc.org/github.com/DharmaOfCode/gorp?status.svg)]
+[![Go Documentation](http://godoc.org/github.com/DharmaOfCode/gorp?status.svg)](http://godoc.org/github.com/DharmaOfCode/gorp)
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 # gorp
@@ -61,8 +61,8 @@ The power of gorp is in the plugins. Creating your own plugin is simple.
 
 ## Todo
  
- - Go doc
  - Add a fancy, interactive shell-like CLI. 
+ - Rad CLI colors and functions for fancy cli printing
  - Create more plugins for tasks such as:
      - Keep track of values such as user GUIDs and show alarms when certain conditions occur while you explore an application (helpful for finding IDORs).
      - Perform framework specific analysis of an application as it is explored. For instance, the tool could list all Angular services or all API endpoints as it analyses scripts used by the application.
