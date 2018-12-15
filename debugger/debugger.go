@@ -13,6 +13,8 @@ import (
 	"time"
 )
 
+// Debugger holds the configuration for the Chrome Dev Protocol hooks. It also
+// contains modules to be used as requests and responses are intercepted.
 type Debugger struct {
 	ChromeProxy *gcd.Gcd
 	Done     		chan bool
@@ -21,12 +23,15 @@ type Debugger struct {
 	Modules 		modules.Modules
 }
 
+// Options defines the options used with the debugger, which is responsible for using the Chrome Dev Tools
+// protocol
 type Options struct {
 	EnableConsole bool
 	Verbose       bool
 	Scope 		  string
 }
 
+// StartTarget initializes  Chrome and sets up the Chrome Dev Tools protocol targets so that events can be intercepted
 func (d *Debugger) StartTarget() {
 	target, err := d.ChromeProxy.NewTab()
 	if err != nil {
@@ -48,7 +53,7 @@ func (d *Debugger) StartTarget() {
 	d.Target = target
 }
 
-// Enable request interception using the specific requestPatterns
+// SetupRequestInterception enables request interception using the specific params
 func (d *Debugger) SetupRequestInterception(params *gcdapi.NetworkSetRequestInterceptionParams) {
 	log.Println("[+] Setting up request interception")
 	if _, err := d.Target.Network.SetRequestInterceptionWithParams(params); err != nil {
@@ -119,6 +124,7 @@ func (d *Debugger) SetupRequestInterception(params *gcdapi.NetworkSetRequestInte
 	})
 }
 
+// AlterDocument alters the body of web responses using the selected processors
 func (d *Debugger) AlterDocument(data modules.WebData) (string, error) {
 	alteredBody, err := d.processBody(data)
 	if err != nil {
@@ -144,6 +150,7 @@ func (d *Debugger) AlterDocument(data modules.WebData) (string, error) {
 	return rawAlteredResponse, nil
 }
 
+// InspectDocument executes inspectors in a gorp session
 func (d *Debugger) InspectDocument(webData modules.WebData){
 	//TODO: abstract this as a debugger function
 	for _, v := range d.Modules.Inspectors{
@@ -176,14 +183,5 @@ func (d *Debugger) processBody(data modules.WebData) (string, error) {
 	return result, nil
 }
 
-// This needs to be actored out of here
-func findAPIs(content string){
-	words := strings.Fields(content)
-	for _, v := range words{
-		if strings.Contains(v, "/api/"){
-			log.Println("[+] API URI:",  v)
-		}
-	}
-}
 
 

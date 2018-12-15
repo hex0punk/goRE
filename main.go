@@ -14,27 +14,28 @@ import (
 	"strings"
 )
 
+// State identifies the state of a gorp session.
 type State struct {
-	Debugger debugger.Debugger
-	Modules  modules.Modules
-	ModPath  string
-	Run      bool
-	GetInfo  bool
+	Debugger debugger.Debugger  // Debugger object
+	Modules  modules.Modules   //Selected modules
+	ModPath  string            // Module path
+	Run      bool				// Whether to run a session
+	GetInfo  bool				// Get module information
 }
 
 var (
 	cfgFile string
 	config  *base.Configuration
 
-	testPath string
-	testDir  string
-	testPort string
+	chromePath string
+	dumpDir  string
+	debugPort string
 )
 
 func init() {
-	flag.StringVar(&testPath, "chrome", "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", "path to chrome")
-	flag.StringVar(&testDir, "dir", "/tmp/chrome-testing", "user directory")
-	flag.StringVar(&testPort, "port", "9222", "Debugger port")
+	flag.StringVar(&chromePath, "chrome", "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", "path to chrome")
+	flag.StringVar(&dumpDir, "dir", "/tmp/chrome-testing", "user directory")
+	flag.StringVar(&debugPort, "port", "9222", "Debugger port")
 }
 
 func ParseCmdLine() *State {
@@ -106,7 +107,7 @@ func RunGorp(s *State) {
 	s.Debugger.SetupRequestInterception(interceptParams)
 
 	if shouldWait {
-		log.Println("[+] Wait for events...")
+		log.Println("[+] Waiting for events...")
 		<-s.Debugger.Done
 	}
 }
@@ -164,11 +165,16 @@ func initConfig() {
 
 // TODO: Move this to debugger
 func startGcd() *gcd.Gcd {
-	testDir = "/tmp/chrome-testing"
-	testPort = "9222"
-	debugger := gcd.NewChromeDebugger()
+	dumpDir = "/tmp/chrome-testing"
+	debugPort = "9222"
+	chromeDebugger := gcd.NewChromeDebugger()
 	//debugger.DeleteProfileOnExit()
-	debugger.AddFlags(config.Flags)
-	debugger.StartProcess(testPath, testDir, testPort)
-	return debugger
+	chromeDebugger.AddFlags(config.Flags)
+	err := chromeDebugger.StartProcess(chromePath, dumpDir, debugPort)
+	if err != nil {
+		panic(fmt.Errorf("Fatal error starting chrome debugger: %s \n", err))
+		os.Exit(1)
+	}
+
+	return chromeDebugger
 }
