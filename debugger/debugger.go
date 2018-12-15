@@ -1,5 +1,4 @@
-// Package debugger provides functionality for using Chrome and the Chrome
-// Dev Tools protocol
+// Package debugger provides functionality for using Chrome and the Chrome Dev Tools protocol
 package debugger
 
 import (
