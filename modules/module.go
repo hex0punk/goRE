@@ -31,13 +31,13 @@ type Option struct {
 	Description string		`json:"description"`// A description of the option
 }
 type ProcessorModule struct {
-	Process	func(body string, docType string) (string, error)
+	Process	func(webData WebData) (string, error)
 	Registry	Registry
 	Options 	[]Option 	`json:"options"`	// A list of configurable options/arguments for the module
 }
 
 type InspectorModule struct {
-	Inspect	func(body string, docType string) error
+	Inspect	func(webData WebData) error
 	Registry	Registry
 	Options 	[]Option
 }
@@ -46,14 +46,21 @@ type Processor interface {
 	Init()
 	GetOptions()  []Option
 	GetRegistry() Registry
-	Process(body string, docType string) (string, error)
+	Process(webData WebData) (string, error)
 }
 
 type Inspector interface {
 	Init()
 	GetOptions()  []Option
 	GetRegistry() Registry
-	Inspect(body string, docType string) error
+	Inspect(webData WebData) error
+}
+
+type WebData struct {
+	Body	string
+	Headers map[string]interface{}
+	Type	string
+	Url		string
 }
 
 func (m *Modules) InitProcessors(mods []base.ModuleConfig) error{

@@ -23,11 +23,11 @@ func (n *ngunhide) Init(){
 	n.Options = []modules.Option{}
 }
 
-func (n *ngunhide) Process(body string, docType string) (string, error){
-	if docType != "Document"{
-		return body, nil
+func (n *ngunhide) Process(webData modules.WebData) (string, error){
+	if webData.Type != "Document"{
+		return webData.Body, nil
 	}
-	r := strings.NewReader(body)
+	r := strings.NewReader(webData.Body)
 	doc, err := goquery.NewDocumentFromReader(r)
 
 	if err != nil {
