@@ -1,3 +1,4 @@
+// Package base provides primitives for running gorp from the command line
 package base
 
 // Configuration holds the configuration of gorp and it is used
