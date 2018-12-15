@@ -56,6 +56,12 @@ func  (a *apifinder) Inspect(webData modules.WebData) error{
 
 	defer f.Close()
 
+	if _, err = f.WriteString("\n[+] Inspecting URL:" +  webData.Url ); err != nil {
+		panic(err)
+	}
+	if _, err = f.WriteString("\n=========================================================="); err != nil {
+		panic(err)
+	}
 	words := strings.Fields(webData.Body)
 	for _, v := range words{
 		if strings.Contains(v, "api/"){
