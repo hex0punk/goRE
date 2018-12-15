@@ -1,3 +1,5 @@
+// Package modules provides functionality for for loading, configuring and running
+// gorp modules
 package modules
 
 import (
