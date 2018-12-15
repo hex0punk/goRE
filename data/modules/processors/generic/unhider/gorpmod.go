@@ -23,12 +23,12 @@ func (u *unhide) Init(){
 	u.Options = []modules.Option{}
 }
 
-func (u *unhide) Process(body string, docType string) (string, error){
-	if docType != "Document"{
-		return body, nil
+func (u *unhide) Process(webData modules.WebData) (string, error){
+	if webData.Type != "Document"{
+		return webData.Body, nil
 	}
 	fmt.Println("Running unhider module...")
-	r := strings.NewReader(body)
+	r := strings.NewReader(webData.Body)
 	doc, err := goquery.NewDocumentFromReader(r)
 
 	if err != nil {

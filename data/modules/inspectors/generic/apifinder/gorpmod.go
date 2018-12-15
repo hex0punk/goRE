@@ -38,7 +38,7 @@ func (a *apifinder) Init() {
 	})
 }
 
-func  (a *apifinder) Inspect(content string, docType string) error{
+func  (a *apifinder) Inspect(webData modules.WebData) error{
 	var f *os.File
 	var err error
 	////Create file if one was not provided
@@ -56,7 +56,7 @@ func  (a *apifinder) Inspect(content string, docType string) error{
 
 	defer f.Close()
 
-	words := strings.Fields(content)
+	words := strings.Fields(webData.Body)
 	for _, v := range words{
 		if strings.Contains(v, "api/"){
 			if a.Options[1].Value == "true"{

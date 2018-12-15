@@ -66,12 +66,13 @@ func (d *Debugger) SetupRequestInterception(params *gcdapi.NetworkSetRequestInte
 		reason := msg.Params.ResponseErrorReason
 		rtype := msg.Params.ResourceType
 		responseHeaders := msg.Params.ResponseHeaders
+		url := msg.Params.Request.Url
 
 		if msg.Params.IsNavigationRequest{
 			log.Print("\n\n\n\n")
 			log.Println("[?] Navigation REQUEST")
 		}
-		log.Println("[+] Request intercepted for", msg.Params.Request.Url)
+		log.Println("[+] Request intercepted for", url)
 		if reason != "" {
 			log.Println("[-] Abort with reason", reason)
 		}
@@ -88,11 +89,16 @@ func (d *Debugger) SetupRequestInterception(params *gcdapi.NetworkSetRequestInte
 						log.Println("[-] Unable to decode body!")
 					}
 				}
-
-				d.InspectDocument(res, rtype)
+				webData := modules.WebData{
+					Body: res,
+					Headers: responseHeaders,
+					Type: rtype,
+					Url:url,
+				}
+				d.InspectDocument(webData)
 
 				if rtype != ""{
-					rawAlteredResponse, err := d.AlterDocument(res, rtype, responseHeaders)
+					rawAlteredResponse, err := d.AlterDocument(webData)
 					if err != nil {
 						log.Println("[-] Unable to alter HTML")
 					}
@@ -113,14 +119,14 @@ func (d *Debugger) SetupRequestInterception(params *gcdapi.NetworkSetRequestInte
 	})
 }
 
-func (d *Debugger) AlterDocument(debuggerResponse string, docType string, headers map[string]interface{}) (string, error) {
-	alteredBody, err := d.processBody(debuggerResponse, docType)
+func (d *Debugger) AlterDocument(data modules.WebData) (string, error) {
+	alteredBody, err := d.processBody(data)
 	if err != nil {
 		return "", err
 	}
 
 	alteredHeader := ""
-	for k, v := range headers {
+	for k, v := range data.Headers {
 		switch strings.ToLower(k) {
 		case "content-length":
 			v = strconv.Itoa(len(alteredBody))
@@ -138,11 +144,11 @@ func (d *Debugger) AlterDocument(debuggerResponse string, docType string, header
 	return rawAlteredResponse, nil
 }
 
-func (d *Debugger) InspectDocument(res string, docType string){
+func (d *Debugger) InspectDocument(webData modules.WebData){
 	//TODO: abstract this as a debugger function
 	for _, v := range d.Modules.Inspectors{
 		//TODO call all inspectors as goroutines
-		err := v.Inspect(res, docType)
+		err := v.Inspect(webData)
 		if err != nil {
 			log.Println("[+] Inspector error: " + v.Registry.Name)
 		}
@@ -158,11 +164,11 @@ func decodeBase64Response(res string) (string, error) {
 	return string(l[:]), nil
 }
 
-func (d *Debugger) processBody(body string, docType string) (string, error) {
-	result := body
+func (d *Debugger) processBody(data modules.WebData) (string, error) {
+	result := data.Body
 	var err error
 	for _, v := range d.Modules.Processors{
-		result, err = v.Process(result, docType)
+		result, err = v.Process(data)
 		if err != nil {
 			return "", err
 		}
