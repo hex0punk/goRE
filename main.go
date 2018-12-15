@@ -32,12 +32,14 @@ var (
 	debugPort string
 )
 
+// Init Initializes required settings
 func init() {
 	flag.StringVar(&chromePath, "chrome", "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", "path to chrome")
 	flag.StringVar(&dumpDir, "dir", "/tmp/chrome-testing", "user directory")
 	flag.StringVar(&debugPort, "port", "9222", "Debugger port")
 }
 
+// ParseCmdLine parses the command line options
 func ParseCmdLine() *State {
 	s := State{}
 	flag.StringVar(&cfgFile, "c", "", "configuration file path")
@@ -49,6 +51,7 @@ func ParseCmdLine() *State {
 	return &s
 }
 
+// RunGorp runs gorp
 func RunGorp(s *State) {
 	initConfig()
 	var err error
@@ -112,6 +115,7 @@ func RunGorp(s *State) {
 	}
 }
 
+// Gets and prints the information for any given module
 func GetModInfo(s *State) {
 	s.Modules = modules.Modules{}
 	if strings.Contains(s.ModPath, "processors") {
