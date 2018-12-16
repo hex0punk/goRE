@@ -101,10 +101,10 @@ func (d *Debugger) SetupRequestInterception(params *gcdapi.NetworkSetRequestInte
 					Type: rtype,
 					Url:url,
 				}
-				go d.InspectDocument(webData)
+				go d.CallInspectors(webData)
 
 				if rtype != ""{
-					rawAlteredResponse, err := d.AlterDocument(webData)
+					rawAlteredResponse, err := d.CallProcessors(webData)
 					if err != nil {
 						log.Println("[-] Unable to alter HTML")
 					}
@@ -125,8 +125,8 @@ func (d *Debugger) SetupRequestInterception(params *gcdapi.NetworkSetRequestInte
 	})
 }
 
-// AlterDocument alters the body of web responses using the selected processors
-func (d *Debugger) AlterDocument(data modules.WebData) (string, error) {
+// CallProcessors alters the body of web responses using the selected processors
+func (d *Debugger) CallProcessors(data modules.WebData) (string, error) {
 	alteredBody, err := d.processBody(data)
 	if err != nil {
 		return "", err
@@ -151,8 +151,8 @@ func (d *Debugger) AlterDocument(data modules.WebData) (string, error) {
 	return rawAlteredResponse, nil
 }
 
-// InspectDocument executes inspectors in a gorp session
-func (d *Debugger) InspectDocument(webData modules.WebData){
+// CallInspectors executes inspectors in a gorp session
+func (d *Debugger) CallInspectors(webData modules.WebData){
 	//TODO: abstract this as a debugger function
 	for _, v := range d.Modules.Inspectors{
 		//TODO call all inspectors as goroutines
