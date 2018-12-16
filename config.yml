@@ -9,4 +9,5 @@ modules:
       options: {}
   inspectors:
     - path: "/data/modules/inspectors/generic/apifinder/"
-      options: {}
+      options:
+        FilePath : "./logs/apifinds.txt"
