@@ -101,7 +101,7 @@ func (d *Debugger) SetupRequestInterception(params *gcdapi.NetworkSetRequestInte
 					Type: rtype,
 					Url:url,
 				}
-				d.InspectDocument(webData)
+				go d.InspectDocument(webData)
 
 				if rtype != ""{
 					rawAlteredResponse, err := d.AlterDocument(webData)

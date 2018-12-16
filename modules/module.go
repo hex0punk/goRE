@@ -79,6 +79,13 @@ func (m *Modules) InitProcessors(mods []base.ModuleConfig) error{
 		if err != nil {
 			return err
 		}
+
+		for option, value := range v.Options{
+			_, err := module.SetOption(option, value)
+			if err != nil {
+				return err
+			}
+		}
 		m.Processors = append(m.Processors, *module)
 	}
 	return nil
@@ -113,6 +120,7 @@ func (m *Modules) GetProcessor(path string) (*ProcessorModule, error) {
 	}
 	processor.Init()
 	module.Registry = processor.GetRegistry()
+	module.Options = processor.GetOptions()
 	module.Process = processor.Process
 	return &module, nil
 }
@@ -123,6 +131,13 @@ func (m *Modules) InitInspectors(mods []base.ModuleConfig) error {
 		module, err := m.GetInspector(v.Path)
 		if err != nil {
 			return err
+		}
+
+		for option, value := range v.Options{
+			_, err := module.SetOption(option, value)
+			if err != nil {
+				return err
+			}
 		}
 		m.Inspectors = append(m.Inspectors, *module)
 	}
@@ -158,6 +173,7 @@ func (m *Modules) GetInspector(path string) (*InspectorModule, error) {
 		}
 		inspector.Init()
 		module.Registry = inspector.GetRegistry()
+		module.Options = inspector.GetOptions()
 		module.Inspect = inspector.Inspect
 		return &module, nil
 }
