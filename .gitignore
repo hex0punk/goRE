@@ -20,6 +20,7 @@
 # Project notes and temp stuff
 *.notes/
 *apis.txt
+*logs/
 
 # Mac Stuff
 .DS*
