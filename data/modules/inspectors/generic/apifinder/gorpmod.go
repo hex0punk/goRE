@@ -9,14 +9,14 @@ import (
 )
 
 type apifinder struct {
-	Registry	modules.Registry
-	Options		[]modules.Option
+	Registry modules.Registry
+	Options  []modules.Option
 }
 
 func (a *apifinder) Init() {
 	a.Registry = modules.Registry{
 		Name:        "APIFinder",
-		DocTypes:     []string{"Document", "Script"},
+		DocTypes:    []string{"Document", "Script"},
 		Author:      []string{"codedharma", "hex0punk"},
 		Path:        "./data/modules/generic/apifinder/gorpmod.go",
 		Description: "Finds apis in javascript code and save it to a chosen file",
@@ -38,12 +38,12 @@ func (a *apifinder) Init() {
 	})
 }
 
-func  (a *apifinder) Inspect(webData modules.WebData) error{
+func (a *apifinder) Inspect(webData modules.WebData) error {
 	var f *os.File
 	var err error
 	////Create file if one was not provided
 	fileName := a.Options[0].Value
-	if fileName == ""{
+	if fileName == "" {
 		currentTime := time.Now()
 		fileName = currentTime.Format("01-02-2006") + "_apis.txt"
 	}
@@ -58,17 +58,17 @@ func  (a *apifinder) Inspect(webData modules.WebData) error{
 
 	words := strings.Fields(webData.Body)
 	for _, v := range words {
-		if strings.Contains(v, "api/"){
-			if a.Options[1].Value == "true"{
-				log.Println("[+] API URI:",  v)
+		if strings.Contains(v, "api/") {
+			if a.Options[1].Value == "true" {
+				log.Println("[+] API URI:", v)
 			}
-			if _, err = f.WriteString("\n[+] Possible API found in URL:" +  webData.Url ); err != nil {
+			if _, err = f.WriteString("\n[+] Possible API found in URL:" + webData.Url); err != nil {
 				panic(err)
 			}
 			if _, err = f.WriteString("\n=========================================================="); err != nil {
 				panic(err)
 			}
-			if _, err = f.WriteString("\n[+] API URI:" +  v + "\n\n"); err != nil {
+			if _, err = f.WriteString("\n[+] API URI:" + v + "\n\n"); err != nil {
 				panic(err)
 			}
 		}
@@ -76,11 +76,12 @@ func  (a *apifinder) Inspect(webData modules.WebData) error{
 	return nil
 }
 
-func (a *apifinder) GetRegistry() modules.Registry{
+func (a *apifinder) GetRegistry() modules.Registry {
 	return a.Registry
 }
 
-func (a *apifinder) GetOptions() []modules.Option{
+func (a *apifinder) GetOptions() []modules.Option {
 	return a.Options
 }
+
 var Inspector apifinder

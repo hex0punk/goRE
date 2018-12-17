@@ -7,24 +7,24 @@ import (
 )
 
 type ngunhide struct {
-	Registry	modules.Registry
-	Options		[]modules.Option
+	Registry modules.Registry
+	Options  []modules.Option
 }
 
-func (n *ngunhide) Init(){
+func (n *ngunhide) Init() {
 	n.Registry = modules.Registry{
-		Name: "Ng-Unhider",
-		DocTypes:     []string{"Document"},
-		Author: []string{"codedharma", "hex0punk"},
-		Path: "./data/modules/angular/unhider/gorpmod.go",
+		Name:        "Ng-Unhider",
+		DocTypes:    []string{"Document"},
+		Author:      []string{"codedharma", "hex0punk"},
+		Path:        "./data/modules/angular/unhider/gorpmod.go",
 		Description: "Unhides elements hidden by angular ng-if or ngIf",
-		Notes: "This may break the functionality of some angular apps",
+		Notes:       "This may break the functionality of some angular apps",
 	}
 	n.Options = []modules.Option{}
 }
 
-func (n *ngunhide) Process(webData modules.WebData) (string, error){
-	if webData.Type != "Document"{
+func (n *ngunhide) Process(webData modules.WebData) (string, error) {
+	if webData.Type != "Document" {
 		return webData.Body, nil
 	}
 	r := strings.NewReader(webData.Body)
@@ -51,11 +51,11 @@ func (n *ngunhide) Process(webData modules.WebData) (string, error){
 	return doc.Html()
 }
 
-func (n *ngunhide) GetRegistry() modules.Registry{
+func (n *ngunhide) GetRegistry() modules.Registry {
 	return n.Registry
 }
 
-func (n *ngunhide) GetOptions() []modules.Option{
+func (n *ngunhide) GetOptions() []modules.Option {
 	return n.Options
 }
 

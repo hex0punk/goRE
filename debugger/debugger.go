@@ -18,10 +18,10 @@ import (
 // contains modules to be used as requests and responses are intercepted.
 type Debugger struct {
 	ChromeProxy *gcd.Gcd
-	Done     		chan bool
-	Options  		Options
-	Target 	 		*gcd.ChromeTarget
-	Modules 		modules.Modules
+	Done        chan bool
+	Options     Options
+	Target      *gcd.ChromeTarget
+	Modules     modules.Modules
 }
 
 // Options defines the options used with the debugger, which is responsible for using the Chrome Dev Tools
@@ -29,7 +29,7 @@ type Debugger struct {
 type Options struct {
 	EnableConsole bool
 	Verbose       bool
-	Scope 		  string
+	Scope         string
 }
 
 // StartTarget initializes  Chrome and sets up the Chrome Dev Tools protocol targets so that events can be intercepted
@@ -74,7 +74,7 @@ func (d *Debugger) SetupRequestInterception(params *gcdapi.NetworkSetRequestInte
 		responseHeaders := msg.Params.ResponseHeaders
 		url := msg.Params.Request.Url
 
-		if msg.Params.IsNavigationRequest{
+		if msg.Params.IsNavigationRequest {
 			log.Print("\n\n\n\n")
 			log.Println("[?] Navigation REQUEST")
 		}
@@ -89,32 +89,32 @@ func (d *Debugger) SetupRequestInterception(params *gcdapi.NetworkSetRequestInte
 				log.Println("[-] Unable to get intercepted response body!", err.Error())
 				target.Network.ContinueInterceptedRequest(iid, reason, "", "", "", "", nil, nil)
 			} else {
-				if encoded{
+				if encoded {
 					res, err = decodeBase64Response(res)
 					if err != nil {
 						log.Println("[-] Unable to decode body!")
 					}
 				}
 				webData := modules.WebData{
-					Body: res,
+					Body:    res,
 					Headers: responseHeaders,
-					Type: rtype,
-					Url:url,
+					Type:    rtype,
+					Url:     url,
 				}
 				go d.CallInspectors(webData)
 
-				if rtype != ""{
+				if rtype != "" {
 					rawAlteredResponse, err := d.CallProcessors(webData)
 					if err != nil {
 						log.Println("[-] Unable to alter HTML")
 					}
 
-						log.Print("[+] Sending modified body\n\n\n")
+					log.Print("[+] Sending modified body\n\n\n")
 
-						_, err = d.Target.Network.ContinueInterceptedRequest(iid, reason, rawAlteredResponse, "", "", "", nil, nil)
-						if err != nil {
-							log.Println(err)
-						}
+					_, err = d.Target.Network.ContinueInterceptedRequest(iid, reason, rawAlteredResponse, "", "", "", nil, nil)
+					if err != nil {
+						log.Println(err)
+					}
 				} else {
 					d.Target.Network.ContinueInterceptedRequest(iid, reason, "", "", "", "", nil, nil)
 				}
@@ -146,15 +146,15 @@ func (d *Debugger) CallProcessors(data modules.WebData) (string, error) {
 	}
 	alteredHeader += "\r\n"
 
-	rawAlteredResponse := base64.StdEncoding.EncodeToString([]byte("HTTP/1.1 200 OK"+"\r\n"+alteredHeader+alteredBody))
+	rawAlteredResponse := base64.StdEncoding.EncodeToString([]byte("HTTP/1.1 200 OK" + "\r\n" + alteredHeader + alteredBody))
 
 	return rawAlteredResponse, nil
 }
 
 // CallInspectors executes inspectors in a gorp session
-func (d *Debugger) CallInspectors(webData modules.WebData){
+func (d *Debugger) CallInspectors(webData modules.WebData) {
 	//TODO: abstract this as a debugger function
-	for _, v := range d.Modules.Inspectors{
+	for _, v := range d.Modules.Inspectors {
 		//TODO call all inspectors as goroutines
 		err := v.Inspect(webData)
 		if err != nil {
@@ -165,7 +165,7 @@ func (d *Debugger) CallInspectors(webData modules.WebData){
 
 func decodeBase64Response(res string) (string, error) {
 	l, err := base64.StdEncoding.DecodeString(res)
-	if err != nil{
+	if err != nil {
 		return "", err
 	}
 
@@ -175,7 +175,7 @@ func decodeBase64Response(res string) (string, error) {
 func (d *Debugger) processBody(data modules.WebData) (string, error) {
 	result := data.Body
 	var err error
-	for _, v := range d.Modules.Processors{
+	for _, v := range d.Modules.Processors {
 		result, err = v.Process(data)
 		if err != nil {
 			return "", err
@@ -183,6 +183,3 @@ func (d *Debugger) processBody(data modules.WebData) (string, error) {
 	}
 	return result, nil
 }
-
-
-
