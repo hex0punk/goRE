@@ -2,12 +2,12 @@
 [![Go Documentation](http://godoc.org/github.com/DharmaOfCode/gorp?status.svg)](http://godoc.org/github.com/DharmaOfCode/gorp)
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
-# gorp
-A modular bug hunting and web application pentesting and reverse engineering framework written in Go.
+# Gorp
+A modular bug hunting, pentesting and webapp reverse engineering framework written in Go.
 
 _If you want to learn more about how this idea came about and how I went about writing this, you can read [this blog post](https://codedharma.com/posts/chrome-devtools-fun-with-golang/). However, note that a lot has changed in the architecture since I wrote that post._
 
-gorp is a Chrome dev protocol engine created for pentesters and hackers. It leverages the Chrome Dev Tool protocol to intercept HTTP responses as you conduct pentest with Chrome via the use of go plugins.
+gorp is an created for web pentesting and reverse engineering. It leverages the Chrome Dev Tool protocol to intercept HTTP responses as you conduct pentest with Chrome via the use of go plugins.
 
 ## gorp plugins
 Gorp plugins are essentially modules that you can use to modify or audit web responses. There are two different types of plugins (so far):
@@ -32,9 +32,9 @@ If run successfully, a new Chrome window should open up with two tabs. Use the s
 ## Creating your own gorp plugin
 The power of gorp is in the plugins. Creating your own plugin is simple.
 
-1. Create a file under `` or ``, depending on your type of plugin (see above for the differences between an inspector and a processor.
+1. Create a file called `gorpmod.go` under `/data/modules/processors` or `/data/modules/inspectors`, depending on your type of plugin (see above for the differences between an inspector and a processor.
 2. Depending on the type of plugin, your code must implement either the `Processor` or `Inspector` interface, which are declared in the `modules` package. Both module types must accept a struct parameter of type `modules.WebData` which gives your module access the response body, headers and type. The type can be `Document`, `Script` or `Request` (`Request` types have not been implemented yet but that is my list of priorities for this gorp).
-3. Your plugin must return a symbol to be used by gorp. The symbol should be declared like this:
+3. Your plugin must include a symbol to be used by gorp. The symbol should be declared like this:
 
    ```golang
    //apifinder is just the name of your plugin
