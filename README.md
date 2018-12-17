@@ -32,7 +32,7 @@ If run successfully, a new Chrome window should open up with two tabs. Use the s
 ## Creating your own gorp plugin
 The power of gorp is in the plugins. Creating your own plugin is simple.
 
-1. Create a file under `` or ``, depending on your type of plugin (see above for the differences between an inspector and a processor.
+1. Create a file called `gorpmod.go` under `/data/modules/processors` or `/data/modules/inspectors`, depending on your type of plugin (see above for the differences between an inspector and a processor.
 2. Depending on the type of plugin, your code must implement either the `Processor` or `Inspector` interface, which are declared in the `modules` package. Both module types must accept a struct parameter of type `modules.WebData` which gives your module access the response body, headers and type. The type can be `Document`, `Script` or `Request` (`Request` types have not been implemented yet but that is my list of priorities for this gorp).
 3. Your plugin must return a symbol to be used by gorp. The symbol should be declared like this:
 
