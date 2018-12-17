@@ -3,7 +3,7 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 # Gorp
-A modular bug hunting and web application pentesting and reverse engineering framework written in Go.
+A modular bug hunting, pentesting and webapp reverse engineering framework written in Go.
 
 _If you want to learn more about how this idea came about and how I went about writing this, you can read [this blog post](https://codedharma.com/posts/chrome-devtools-fun-with-golang/). However, note that a lot has changed in the architecture since I wrote that post._
 
