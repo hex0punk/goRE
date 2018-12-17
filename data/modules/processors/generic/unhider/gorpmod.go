@@ -12,19 +12,19 @@ type unhide struct {
 	Options  []modules.Option
 }
 
-func (u *unhide) Init(){
+func (u *unhide) Init() {
 	u.Registry = modules.Registry{
-		Name: "HTML-Unhider",
-		DocTypes:     []string{"Document"},
-		Author: []string{"codedharma", "hex0punk"},
-		Path: "./data/modules/generic/unhider/gorpmod.go",
+		Name:        "HTML-Unhider",
+		DocTypes:    []string{"Document"},
+		Author:      []string{"codedharma", "hex0punk"},
+		Path:        "./data/modules/generic/unhider/gorpmod.go",
 		Description: "Unhides input elements from responses and adds an indicator for the name attribute",
 	}
 	u.Options = []modules.Option{}
 }
 
-func (u *unhide) Process(webData modules.WebData) (string, error){
-	if webData.Type != "Document"{
+func (u *unhide) Process(webData modules.WebData) (string, error) {
+	if webData.Type != "Document" {
 		return webData.Body, nil
 	}
 	fmt.Println("Running unhider module...")
@@ -41,7 +41,9 @@ func (u *unhide) Process(webData modules.WebData) (string, error){
 		if ex && att == "hidden" {
 			var v string
 			v, ex = s.Attr("name")
-			if ex { s.BeforeHtml("<span style='color: white; background-color:black;'>" + v +"</span>") }
+			if ex {
+				s.BeforeHtml("<span style='color: white; background-color:black;'>" + v + "</span>")
+			}
 			s.SetAttr("type", "")
 		}
 	})
@@ -56,11 +58,11 @@ func (u *unhide) Process(webData modules.WebData) (string, error){
 	return doc.Html()
 }
 
-func (u *unhide) GetRegistry() modules.Registry{
+func (u *unhide) GetRegistry() modules.Registry {
 	return u.Registry
 }
 
-func (u *unhide) GetOptions() []modules.Option{
+func (u *unhide) GetOptions() []modules.Option {
 	return u.Options
 }
 

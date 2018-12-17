@@ -16,11 +16,11 @@ import (
 
 // State identifies the state of a gorp session.
 type State struct {
-	Debugger debugger.Debugger  // Debugger object
+	Debugger debugger.Debugger // Debugger object
 	Modules  modules.Modules   //Selected modules
 	ModPath  string            // Module path
-	Run      bool				// Whether to run a session
-	GetInfo  bool				// Get module information
+	Run      bool              // Whether to run a session
+	GetInfo  bool              // Get module information
 }
 
 var (
@@ -28,8 +28,8 @@ var (
 	config  *base.Configuration
 
 	chromePath string
-	dumpDir  string
-	debugPort string
+	dumpDir    string
+	debugPort  string
 )
 
 // Init Initializes required settings
