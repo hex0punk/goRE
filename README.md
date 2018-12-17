@@ -7,7 +7,7 @@ A modular bug hunting, pentesting and webapp reverse engineering framework writt
 
 _If you want to learn more about how this idea came about and how I went about writing this, you can read [this blog post](https://codedharma.com/posts/chrome-devtools-fun-with-golang/). However, note that a lot has changed in the architecture since I wrote that post._
 
-gorp is a Chrome dev protocol engine created for pentesters and hackers. It leverages the Chrome Dev Tool protocol to intercept HTTP responses as you conduct pentest with Chrome via the use of go plugins.
+gorp is an created for web pentesting and reverse engineering. It leverages the Chrome Dev Tool protocol to intercept HTTP responses as you conduct pentest with Chrome via the use of go plugins.
 
 ## gorp plugins
 Gorp plugins are essentially modules that you can use to modify or audit web responses. There are two different types of plugins (so far):
