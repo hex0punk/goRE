@@ -1,4 +1,4 @@
-scope: "zomato.com"
+scope: "staticblitz.com"
 verbose: False
 flags: ["-na", "--disable-gpu", "--window-size=1200,800", "--auto-open-devtools-for-tabs","--disable-popup-blocking"]
 modules:
@@ -7,6 +7,11 @@ modules:
       options: {}
     - path: "/data/modules/processors/generic/unhider/"
       options: {}
+    - path: "/data/modules/processors/generic/findreplace/"
+      options:
+        Find: "core_1.enableProdMode();"
+        Replace: ""
+        URL: ""
   inspectors:
     - path: "/data/modules/inspectors/generic/apifinder/"
       options:
