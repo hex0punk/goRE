@@ -173,13 +173,14 @@ func decodeBase64Response(res string) (string, error) {
 }
 
 func (d *Debugger) processBody(data modules.WebData) (string, error) {
-	result := data.Body
+	result := data
 	var err error
 	for _, v := range d.Modules.Processors {
-		result, err = v.Process(data)
+		log.Println("[+] Running processor: " + v.Registry.Name)
+		result.Body, err = v.Process(result)
 		if err != nil {
 			return "", err
 		}
 	}
-	return result, nil
+	return result.Body, nil
 }
