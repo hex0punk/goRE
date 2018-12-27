@@ -87,13 +87,15 @@ func RunGorp(s *State) {
 	s.Debugger.Done = make(chan bool)
 	shouldWait := true
 
-	patterns := make([]*gcdapi.NetworkRequestPattern, 2)
+	patterns := make([]*gcdapi.NetworkRequestPattern, 3)
 	//Default is everything!
 	docPattern := "*"
 	jsPattern := "*"
+	xhrPattern := "*"
 	if config.Scope != "" {
 		docPattern = "*" + config.Scope + "/*"
 		jsPattern = "*" + config.Scope + "*.js"
+		xhrPattern = "*" + config.Scope + "/*"
 	}
 	patterns[0] = &gcdapi.NetworkRequestPattern{
 		UrlPattern:        docPattern,
@@ -103,6 +105,11 @@ func RunGorp(s *State) {
 	patterns[1] = &gcdapi.NetworkRequestPattern{
 		UrlPattern:        jsPattern,
 		ResourceType:      "Script",
+		InterceptionStage: "HeadersReceived",
+	}
+	patterns[2] = &gcdapi.NetworkRequestPattern{
+		UrlPattern:        xhrPattern,
+		ResourceType:      "XHR",
 		InterceptionStage: "HeadersReceived",
 	}
 	interceptParams := &gcdapi.NetworkSetRequestInterceptionParams{Patterns: patterns}
