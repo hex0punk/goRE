@@ -1,17 +1,17 @@
-scope: "staticblitz.com"
+scope: ""
 verbose: False
 flags: ["-na", "--disable-gpu", "--window-size=1200,800", "--auto-open-devtools-for-tabs","--disable-popup-blocking"]
 modules:
   processors:
+    - path: "/data/modules/processors/generic/findreplace/"
+      options:
+        Find: 'function V(){if(Qo)throw new Error("Cannot enable prod mode after platform setup.");Yo=!1}'
+        Replace: 'function V(){console.log("prodmode function hijacked")}'
+        URL: ""
     - path: "/data/modules/processors/angular/unhider/"
       options: {}
     - path: "/data/modules/processors/generic/unhider/"
       options: {}
-    - path: "/data/modules/processors/generic/findreplace/"
-      options:
-        Find: "core_1.enableProdMode();"
-        Replace: ""
-        URL: ""
   inspectors:
     - path: "/data/modules/inspectors/generic/apifinder/"
       options:
