@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/DharmaOfCode/gorp/modules"
+	"log"
 	"strings"
 )
 
@@ -67,7 +68,10 @@ func (f *findreplace) Process(webData modules.WebData) (string, error) {
 		return webData.Body, nil
 	}
 
-
+	if !strings.Contains(webData.Body, f.Options[2].Value){
+		return webData.Body, nil
+	}
+	log.Println("[+] findandreplace: Found something to replace!")
 	return strings.Replace(webData.Body, f.Options[2].Value, f.Options[3].Value, -1), nil
 }
 
