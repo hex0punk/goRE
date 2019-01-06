@@ -14,7 +14,7 @@ type findreplace struct {
 func (f *findreplace) Init() {
 	f.Registry = modules.Registry{
 		Name:        "FindReplace",
-		DocTypes:    []string{"Document"},
+		DocTypes:    []string{"Document", "Script", "XHR"},
 		Author:      []string{"codedharma", "hex0punk"},
 		Path:        "./data/modules/generic/findreplace/gorpmod.go",
 		Description: "Simple find replace plugin for responses.",
