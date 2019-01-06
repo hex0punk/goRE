@@ -1,51 +1,92 @@
 package main
 
 import (
-	"fmt"
+	"github.com/DharmaOfCode/gorp/modules"
 	"strings"
 )
 
-var body = `function R(t){t._nesting--,I(t)};function B(t){Xo=t};function Va(){if(Qo)throw new Error("Cannot enable prod mode after platform setup.");Yo=!1};function q(){return Qo=!0,Yo}function L(t,n,e){void 0===e&&(e=[]);var o=new Ee("Platform: "+n);`
-var newProdModeFunc = `{console.log("hijacked enableProdMode function!")}`
-func main(){
-	idx := strings.Index(body, "\"Cannot enable prod mode")
-	if idx == -1{
-		return
+type prodModeHijacker struct {
+	Registry modules.Registry
+	Options  []modules.Option
+}
+
+type jsFunction struct {
+	Name       string
+	Body       string
+	Raw        string
+	StartIndex int
+	EndIndex   int
+}
+
+func (p *prodModeHijacker) Init() {
+	p.Registry = modules.Registry{
+		Name:        "prodModeHijacker",
+		DocTypes:    []string{"Script", "XHR"},
+		Author:      []string{"codedharma", "hex0punk"},
+		Path:        "./data/modules/processors/angular/prodModeHijacker/gorpmod.go",
+		Description: "Loads angular 2 code bundled with webpack in development mode, allowing researchers to debug dynamically from the console",
+		Notes:       "",
+	}
+	p.Options = []modules.Option{}
+}
+
+const newProdModeFunc = `{console.log("hijacked enableProdMode function!")}`
+
+func (p *prodModeHijacker) Process(webData modules.WebData) (string, error) {
+	enableProdModeFunc := getJsFunction(webData.Body, "\"Cannot enable prod mode")
+	if enableProdModeFunc == nil{
+		return webData.Body, nil
 	}
 
-	//find end index for enableProdMode function
-	funcEndIndex  := 0
+	return strings.Replace(webData.Body, enableProdModeFunc.Body, newProdModeFunc, -1), nil
+}
+
+func getJsFunction(body string, canary string) *jsFunction {
+	idx := strings.Index(body, canary)
+	if idx == -1 {
+		return nil
+	}
+
+	result := jsFunction{}
+	// find end index for function
+	// TODO: for a general function finder, this would be useless as it
+	// is a naive way to parse for functions. So this needs fixed
 	for i := idx; i < len(body); i++ {
 		funcChar := string(body[i])
-		if funcChar == "}"{
-			funcEndIndex = i + 1
+		if funcChar == "}" {
+			result.EndIndex = i + 1
 			break
 		}
 	}
 
-	//find beginning index for enbleProdMod
-	funcBeginIndex := 0
+	//find start index
 	for i := idx; i < len(body); i-- {
-		funcWord := string(body[i-8:i])
-		if funcWord == "function"{
-			funcBeginIndex = i-8
+		// word "function" has 8 characters
+		funcWord := string(body[i-8 : i])
+		if funcWord == "function" {
+			result.StartIndex = i - 8
 			break
 		}
 	}
 
-	prodModFunc := body[funcBeginIndex:funcEndIndex]
-	fmt.Println(prodModFunc + "\n\n")
-
+	result.Raw = body[result.StartIndex:result.EndIndex]
 	// now get the function symbol or name
-	idx = strings.Index(prodModFunc, "(")
-	out := strings.TrimLeft(strings.TrimSuffix(prodModFunc,prodModFunc[idx:]),"function ")
-	fmt.Println("out = " + out)
-	funcSymbol := strings.TrimSpace(out)
-	fmt.Println("func name is :" + funcSymbol)
+	idx = strings.Index(result.Raw, "(")
+	out := strings.TrimLeft(strings.TrimSuffix(result.Raw, result.Raw[idx:]), "function ")
+	result.Name = strings.TrimSpace(out)
 
 	// get the function body
-	funcBody := prodModFunc[strings.Index(prodModFunc, "{"):]
-	fmt.Println("function body:" + funcBody)
+	result.Body = result.Raw[strings.Index(result.Raw, "{"):]
 
-	fmt.Println(strings.Replace(body, funcBody, newProdModeFunc, -1))
+	return &result
 }
+
+func (p *prodModeHijacker) GetRegistry() modules.Registry {
+	return p.Registry
+}
+
+func (p *prodModeHijacker) GetOptions() []modules.Option {
+	return p.Options
+}
+
+var Processor prodModeHijacker
