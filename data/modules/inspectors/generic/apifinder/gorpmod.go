@@ -22,27 +22,30 @@ func (a *apifinder) Init() {
 		Description: "Finds apis in javascript code and save it to a chosen file",
 	}
 
-	a.Options = []modules.Option{}
-	a.Options = append(a.Options, modules.Option{
-		Name:        "FilePath",
-		Value:       "",
-		Required:    true,
-		Description: "The file where to save findings to",
-	})
-
-	a.Options = append(a.Options, modules.Option{
-		Name:        "Print",
-		Value:       "true",
-		Required:    true,
-		Description: "When an api is found, print it to console",
-	})
+	a.Options = []modules.Option{
+		{
+			Name:        "FilePath",
+			Value:       "",
+			Required:    true,
+			Description: "The file where to save findings to",
+		},
+		{
+			Name:        "Print",
+			Value:       "true",
+			Required:    true,
+			Description: "When an api is found, print it to console",
+		},
+	}
 }
 
 func (a *apifinder) Inspect(webData modules.WebData) error {
 	var f *os.File
 	var err error
 	////Create file if one was not provided
-	fileName := a.Options[0].Value
+	fileName, err := modules.GetModuleOption(a.Options, "FilePath")
+	if err != nil {
+		panic(err)
+	}
 	if fileName == "" {
 		currentTime := time.Now()
 		fileName = currentTime.Format("01-02-2006") + "_apis.txt"
@@ -57,9 +60,14 @@ func (a *apifinder) Inspect(webData modules.WebData) error {
 	defer f.Close()
 
 	words := strings.Fields(webData.Body)
+	o, err := modules.GetModuleOption(a.Options, "Print")
+	if err != nil {
+		panic(err)
+	}
+	stdOut := o == "true"
 	for _, v := range words {
 		if strings.Contains(v, "api/") {
-			if a.Options[1].Value == "true" {
+			if stdOut {
 				log.Println("[+] API URI:", v)
 			}
 			if _, err = f.WriteString("\n[+] Possible API found in URL:" + webData.Url); err != nil {
