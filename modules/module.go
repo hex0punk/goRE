@@ -224,22 +224,22 @@ func setModuleOption(options []Option, name string, value string) error {
 }
 
 func showInfo(r Registry) {
-	color.Yellow("Module:\r\n\t%s\r\n", r.Name)
-	color.Yellow("Authors:")
+	color.Green("Module:\r\n\t%s\r\n", r.Name)
+	color.Green("Authors:")
 	for d := range r.DocTypes {
-		color.Yellow("\t%s", r.DocTypes[d])
+		color.Green("\t%s", r.DocTypes[d])
 	}
-	color.Yellow("Authors:")
+	color.Green("Authors:")
 	for a := range r.Author {
 		color.Yellow("\t%s", r.Author[a])
 	}
-	color.Yellow("Credits:")
+	color.Green("Credits:")
 	for c := range r.Credits {
 		color.Yellow("\t%s", r.Credits[c])
 	}
-	color.Yellow("Description:\r\n\t%s", r.Description)
+	color.Green("Description:\r\n\t%s", r.Description)
 	fmt.Println()
-	color.Yellow("Notes: %s", r.Notes)
+	color.Green("Notes: %s", r.Notes)
 }
 
 func printOptions(options []Option) {
