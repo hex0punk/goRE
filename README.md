@@ -16,6 +16,13 @@ Gorp plugins are essentially modules that you can use to modify or audit web res
 
 - **Inspectors:**: inspectors conduct  analysis on responses. For instance, you may want to record all references to API calls made by the application by inspecting JavaScript code. This way, rather than waiting until the browser makes a call to `/api/admin/adduser`, you may be able to find a reference to that path in the client side code. JS Framework specific inspectors could also be used to inspect things such as services, controllers, authorization controllers, etc. Inspectors do not modify responses.
 
+### Recompiling gorp plugins
+At the moment there are constant changes on the module package. A change in that package would require that plugins are recompiled. This can be a pain as every module would need to be recompiled, so we have automated that task. Just run the below command and all modules will be recompiled:
+
+```shell
+go run main.go -p
+```
+
 ## Using gorp
 1. Create a configuration file that uses the structure used by the `config.yaml` file in the root directory of this repo.
 2. You can find information about any plugin by running this command:
