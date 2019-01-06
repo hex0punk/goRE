@@ -9,18 +9,22 @@ import (
 	"github.com/spf13/viper"
 	"github.com/wirepair/gcd"
 	"github.com/wirepair/gcd/gcdapi"
+	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"strings"
 )
 
 // State identifies the state of a gorp session.
 type State struct {
-	Debugger debugger.Debugger // Debugger object
-	Modules  modules.Modules   //Selected modules
-	ModPath  string            // Module path
-	Run      bool              // Whether to run a session
-	GetInfo  bool              // Get module information
+	Debugger         debugger.Debugger // Debugger object
+	Modules          modules.Modules   //Selected modules
+	ModPath          string            // Module path
+	Run              bool              // Whether to run a session
+	GetInfo          bool              // Get module information
+	RecompileModules bool
 }
 
 var (
@@ -31,6 +35,8 @@ var (
 	dumpDir    string
 	debugPort  string
 )
+
+const modulesFolder = "./data/modules/"
 
 // Init Initializes required settings
 func init() {
@@ -46,9 +52,34 @@ func ParseCmdLine() *State {
 	flag.StringVar(&s.ModPath, "m", "", "path of module to get info for")
 	flag.BoolVar(&s.Run, "r", true, "run gorp")
 	flag.BoolVar(&s.GetInfo, "i", false, "run gorp")
+	flag.BoolVar(&s.RecompileModules, "p", false, "recompile all plugins")
 
 	flag.Parse()
 	return &s
+}
+
+// RecompileModules recompiles all gorp plugins
+func RecompileModules() {
+	folders, err := ioutil.ReadDir(modulesFolder)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, f := range folders {
+		pluginPath := modulesFolder + f.Name()
+		err = filepath.Walk(pluginPath, func(path string, info os.FileInfo, err error) error {
+			if containsGorpPlugin(path) {
+				log.Println("[+] recompiling plugin module: " + filepath.Base(path))
+				out, err := exec.Command("go", "build", "-buildmode=plugin", "-o", path+"/gorpmod.so", path+"/gorpmod.go").
+					Output()
+				if err != nil {
+					log.Fatal(err)
+				}
+				fmt.Printf("%s\n", out)
+			}
+			return nil
+		})
+	}
 }
 
 // RunGorp runs gorp
@@ -150,6 +181,8 @@ func main() {
 	s := ParseCmdLine()
 	if s.GetInfo {
 		GetModInfo(s)
+	} else if s.RecompileModules {
+		RecompileModules()
 	} else {
 		RunGorp(s)
 	}
@@ -168,7 +201,6 @@ func initConfig() {
 	err := viper.ReadInConfig()
 	if err != nil {
 		panic(fmt.Errorf("Fatal error config file: %s \n", err))
-		os.Exit(1)
 	}
 
 	err = viper.Unmarshal(&config)
@@ -188,4 +220,11 @@ func startGcd() *gcd.Gcd {
 	}
 
 	return chromeDebugger
+}
+
+func containsGorpPlugin(path string) bool {
+	if _, err := os.Stat(path + "/gorpmod.go"); err == nil {
+		return true
+	}
+	return false
 }

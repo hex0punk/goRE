@@ -81,11 +81,12 @@ func (m *Modules) InitProcessors(mods []base.ModuleConfig) error {
 		}
 
 		for option, value := range v.Options {
-			_, err := module.SetOption(option, value)
+			err := module.SetOption(option, value)
 			if err != nil {
 				return err
 			}
 		}
+		printOptions(module.Options)
 		m.Processors = append(m.Processors, *module)
 	}
 	return nil
@@ -134,11 +135,12 @@ func (m *Modules) InitInspectors(mods []base.ModuleConfig) error {
 		}
 
 		for option, value := range v.Options {
-			_, err := module.SetOption(option, value)
+			err := module.SetOption(option, value)
 			if err != nil {
 				return err
 			}
 		}
+		printOptions(module.Options)
 		m.Inspectors = append(m.Inspectors, *module)
 	}
 	return nil
@@ -189,29 +191,36 @@ func (i *InspectorModule) ShowInfo() {
 }
 
 // SetOption is used to change and set a processor module option. Used when a user is configuring a processor module.
-// It returns a message indicating whether the options was set successfully.
-func (p *ProcessorModule) SetOption(option string, value string) (string, error) {
-	// Verify this option exists
-	for k, v := range p.Options {
-		if option == v.Name {
-			p.Options[k].Value = value
-			return fmt.Sprintf("%s set to %s", v.Name, p.Options[k].Value), nil
-		}
-	}
-	return "", fmt.Errorf("invalid module option: %s", option)
+// It returns an error if not set successfully.
+func (p *ProcessorModule) SetOption(name string, value string) error {
+	return setModuleOption(p.Options, name, value)
 }
 
 // SetOption is used to change and set an inspector module option. Used when a user is configuring an inspector module.
-// It returns a message indicating whether the options was set successfully.
-func (i *InspectorModule) SetOption(option string, value string) (string, error) {
-	// Verify this option exists
-	for k, v := range i.Options {
-		if option == v.Name {
-			i.Options[k].Value = value
-			return fmt.Sprintf("%s set to %s", v.Name, i.Options[k].Value), nil
+// It returns an error if not set successfully.
+func (i *InspectorModule) SetOption(name string, value string) error {
+	return setModuleOption(i.Options, name, value)
+}
+
+// GetModuleOptionValue is used for obtaining the value of a given module option.
+// It returns the value for the option name requested and an error if the option cannot be found.
+func GetModuleOption(p []Option, name string) (string, error) {
+	for k, v := range p {
+		if name == v.Name {
+			return p[k].Value, nil
 		}
 	}
-	return "", fmt.Errorf("invalid module option: %s", option)
+	return "", fmt.Errorf("option with key %s not found", name)
+}
+
+func setModuleOption(options []Option, name string, value string) error {
+	for k, v := range options {
+		if name == v.Name {
+			options[k].Value = value
+			return nil
+		}
+	}
+	return fmt.Errorf("invalid module option: %s", name)
 }
 
 func showInfo(r Registry) {
@@ -231,4 +240,10 @@ func showInfo(r Registry) {
 	color.Yellow("Description:\r\n\t%s", r.Description)
 	fmt.Println()
 	color.Yellow("Notes: %s", r.Notes)
+}
+
+func printOptions(options []Option) {
+	for _, v := range options {
+		fmt.Println("[+] option: " + v.Name + " set to: " + v.Value)
+	}
 }
