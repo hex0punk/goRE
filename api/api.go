@@ -1,7 +1,10 @@
 // Package debugger provides utilities and structs that can be used by modules
 package api
 
-import "strings"
+import (
+	"fmt"
+	"strings"
+)
 
 // JsFunction holds a JS function data
 type JsFunction struct {
@@ -29,16 +32,65 @@ func GetJsFunctionWithHint(body string, hint string) *JsFunction {
 	// find the start index for function statement/body
 	// start at hint location
 	// and look for a function declaration indicator
-	for i := idx; i < len(body); i-- {
+	fmt.Print("finding bodystart with index: ")
+	fmt.Println(idx)
+	found := false
+	for i := idx; i > 0; i-- {
+		//fmt.Println(string(body[i-2:i]))
 		if string(body[i-2:i]) == "){" {
-			result.BodyStart = i - 1
-			break
+			fmt.Println("first possible body start")
+			for x := i - 1; i > 0; x--{
+				if string(body[x]) == "("{
+					//check - 8 , if the word is function then steo here
+					if string(body[x-8:x]) == "function" || string(body[x-9:x]) == "function "{
+						fmt.Println("first found!")
+						result.BodyStart = i - 1
+						found = true
+						break
+					} else {
+						//else
+						//keep checking until we hit a space
+						//then, if the current index - 8 = the word function then steop here
+						if string(body[x]) == " " && string(body[x-8:x]) == "function"{
+							result.BodyStart = i - 1
+							break
+						}
+						continue
+					}
+				}
+			}
+			if found{
+				break
+			}
 		} else if string(body[i-3:i]) == ") {" {
-			result.BodyStart = i - 2
-			break
+			fmt.Println("second possible body start")
+			for x := i - 1; i > 0; x--{
+				if string(body[x]) == "("{
+					//check - 8 , if the word is function then steo here
+					if string(body[x-8:x]) == "function" || string(body[x-9:x]) == "function "{
+						fmt.Println("second found!")
+						result.BodyStart = i - 2
+						break
+					} else {
+						//else
+						//keep checking until we hit a space
+						//then, if the current index - 8 = the word function then steop here
+						if string(body[x]) == " " && string(body[x-8:x]) == "function"{
+							result.BodyStart = i - 2
+							found = true
+							break
+						}
+						continue
+					}
+				}
+			}
+			if found{
+				break
+			}
 		}
 	}
 
+	fmt.Println(result)
 	// find the start index of entire function
 	// starting with word function
 	for i := result.BodyStart; i < len(body); i-- {
