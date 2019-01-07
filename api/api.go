@@ -19,12 +19,12 @@ type JsFunction struct {
 
 // GetJSFunctionWithHint finds a function in a js file using a hint to locate it.
 // It returns a pointer to a jsFunction object
-func GetJsFunctionWithHint(body string, hint string) *JsFunction {
-	// TODO: break this into smaller private functions
-	// TODO: same function but find by name
+func GetJsFunctionWithHint(body string, hint string) (*JsFunction, error) {
+	// TODO: find params as well
+	// TODO: this could break if closures inside function
 	idx := strings.Index(body, hint)
 	if idx == -1 {
-		return nil
+		return nil, fmt.Errorf("unable to locate function")
 	}
 
 	result := JsFunction{}
@@ -32,67 +32,18 @@ func GetJsFunctionWithHint(body string, hint string) *JsFunction {
 	// find the start index for function statement/body
 	// start at hint location
 	// and look for a function declaration indicator
-	fmt.Print("finding bodystart with index: ")
-	fmt.Println(idx)
-	found := false
 	for i := idx; i > 0; i-- {
-		//fmt.Println(string(body[i-2:i]))
-		if string(body[i-2:i]) == "){" {
-			fmt.Println("first possible body start")
-			for x := i - 1; i > 0; x--{
-				if string(body[x]) == "("{
-					fmt.Println("first open param")
-					//check - 8 , if the word is function then steo here
-					if string(body[x-8:x]) == "function" || string(body[x-9:x]) == "function "{
-						fmt.Println("first found!")
-						result.BodyStart = i - 1
-						found = true
-						break
-					} else {
-						//else
-						//keep checking until we hit a space
-						//then, if the current index - 8 = the word function then steop here
-						if string(body[x]) == " " && string(body[x-8:x]) == "function"{
-							result.BodyStart = i - 1
-							break
-						}
-						continue
-					}
+		if string(body[i-8:i]) == "function" {
+			for x := i; x < len(body); x++{
+				if string(body[x]) == "{" {
+					result.BodyStart = x
+					break
 				}
 			}
-			if found{
-				break
-			}
-		} else if string(body[i-3:i]) == ") {" {
-			fmt.Println("second possible body start")
-			for x := i - 1; i > 0; x--{
-				if string(body[x]) == "("{
-					fmt.Println("Second open param")
-					//check - 8 , if the word is function then steo here
-					if string(body[x-8:x]) == "function" || string(body[x-9:x]) == "function "{
-						fmt.Println("second found!")
-						result.BodyStart = i - 2
-						break
-					} else {
-						//else
-						//keep checking until we hit a space
-						//then, if the current index - 8 = the word function then steop here
-						if string(body[x]) == " " && string(body[x-8:x]) == "function"{
-							result.BodyStart = i - 2
-							found = true
-							break
-						}
-						continue
-					}
-				}
-			}
-			if found{
-				break
-			}
+			break
 		}
 	}
 
-	fmt.Println(result)
 	// find the start index of entire function
 	// starting with word function
 	for i := result.BodyStart; i < len(body); i-- {
@@ -103,49 +54,102 @@ func GetJsFunctionWithHint(body string, hint string) *JsFunction {
 		}
 	}
 
+	err := processJsFunction(&result, body)
+	if err != nil{
+		return  nil, err
+	}
+
+	return &result, nil
+}
+
+func GetJsFunctionWithName(body string, name string) (*JsFunction, error){
+	signatures := []string{
+		"var "+name+" = function",
+		"var "+name+" =function",
+		"var "+name+"= function",
+		"var "+name+"=function",
+		"function "+name+" (",
+		"function "+name+"(",
+	}
+	result := JsFunction{
+		Start : -1,
+		Name: name,
+	}
+	for _, signature := range signatures{
+		result.Start = strings.Index(body, signature)
+		if result.Start != -1 {
+			break
+		}
+	}
+	if result.Start == -1 {
+		return nil, fmt.Errorf("unable to locate function")
+	}
+
+	//All we need to do is find the body start index
+	for i := result.Start; i > 0; i++ {
+		if string(body[i]) == "{" {
+			result.BodyStart = i
+			break
+		}
+	}
+	err := processJsFunction(&result, body)
+	if err != nil{
+		return  nil, err
+	}
+
+	return &result, nil
+}
+
+// This is only to avoid code duplication but it requires that
+// BodyStart and Start values are found first for it to work
+func processJsFunction(j *JsFunction, body string) error{
 	// find end index for function
+	if j.Start == 0 || j.BodyStart == 0{
+		return fmt.Errorf("JsFunction pointer must include values for Start and Body Start")
+	}
 	tracker := 0
-	for i := result.BodyStart; i < len(body); i++ {
+	for i := j.BodyStart; i < len(body); i++ {
 		if string(body[i]) == "{" {
 			tracker++
 		} else if string(body[i]) == "}" {
 			tracker--
 			if tracker == 0 {
-				result.End = i + 1
+				j.End = i + 1
 				break
 			}
 		}
 	}
 
 	// is is declared as an expression?
-	result.Expression = strings.Contains(body[result.Start:result.End], "function (") ||
-		strings.Contains(body[result.Start:result.End], "function(")
+	j.Expression = strings.Contains(body[j.Start:j.End], "function (") ||
+		strings.Contains(body[j.Start:j.End], "function(")
 
-	if result.Expression {
-		for i := result.BodyStart; i < len(body); i-- {
+	if j.Expression {
+		for i := j.BodyStart; i < len(body); i-- {
 			varWord := string(body[i-3 : i])
 			if varWord == "var" {
-				result.Start = i - 3
+				j.Start = i - 3
 				break
 			}
 		}
 	}
-	result.Raw = body[result.Start:result.End]
-	result.Body = body[result.BodyStart:result.End]
+	j.Raw = body[j.Start:j.End]
+	j.Body = body[j.BodyStart:j.End]
 
 	// now get the function symbol or name
-	var nameEnd string
-	var nameBegin string
-	if result.Expression {
-		nameBegin = "var "
-		nameEnd = "="
-	} else {
-		nameBegin = "function "
-		nameEnd = "("
+	if j.Name == ""{
+		var nameEnd string
+		var nameBegin string
+		if j.Expression {
+			nameBegin = "var "
+			nameEnd = "="
+		} else {
+			nameBegin = "function "
+			nameEnd = "("
+		}
+		idx := strings.Index(j.Raw, nameEnd)
+		out := strings.TrimLeft(strings.TrimSuffix(j.Raw, j.Raw[idx:]), nameBegin)
+		j.Name = strings.TrimSpace(out)
 	}
-	idx = strings.Index(result.Raw, nameEnd)
-	out := strings.TrimLeft(strings.TrimSuffix(result.Raw, result.Raw[idx:]), nameBegin)
-	result.Name = strings.TrimSpace(out)
-
-	return &result
+	return nil
 }
