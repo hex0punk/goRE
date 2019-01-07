@@ -17,18 +17,18 @@ func (f *functionHijacker) Init() {
 		DocTypes:    []string{"Script", "XHR"},
 		Author:      []string{"codedharma", "hex0punk"},
 		Path:        "./data/modules/processors/angular/functionhijacker/gorpmod.go",
-		Description: "Replaces a function body. The module finds the function by name.",
+		Description: "Hijacks and alters a function. The module finds the function by name.",
 		Notes:       "At times a page may load scripts that have functions with the same name, in which case this would not work",
 	}
 	f.Options = []modules.Option{
 		{
-			Name:        "Function name",
+			Name:        "FunctionName",
 			Value:       "",
 			Required:    true,
 			Description: "The name of the function to hijack",
 		},
 		{
-			Name:        "New body",
+			Name:        "NewBody",
 			Value:       "console.log('function hijacked!')",
 			Required:    true,
 			Description: "The new function body",
