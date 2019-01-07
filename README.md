@@ -73,5 +73,4 @@ The power of gorp is in the plugins. Creating your own plugin is simple.
  - Create more plugins for tasks such as:
      - Keep track of values such as user GUIDs and show alarms when certain conditions occur while you explore an application (helpful for finding IDORs).
      - Perform framework specific analysis of an application as it is explored. For instance, the tool could list all Angular services or all API endpoints as it analyses scripts used by the application.
-     - Alter scripts to test for specific behaviors, such as setting `isAdmin` variables to `true` before a request is submitted to a server.
-     - Other cool stuff.
+     - Other rad stuff.
