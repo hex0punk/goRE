@@ -41,6 +41,7 @@ func GetJsFunctionWithHint(body string, hint string) *JsFunction {
 			fmt.Println("first possible body start")
 			for x := i - 1; i > 0; x--{
 				if string(body[x]) == "("{
+					fmt.Println("first open param")
 					//check - 8 , if the word is function then steo here
 					if string(body[x-8:x]) == "function" || string(body[x-9:x]) == "function "{
 						fmt.Println("first found!")
@@ -66,6 +67,7 @@ func GetJsFunctionWithHint(body string, hint string) *JsFunction {
 			fmt.Println("second possible body start")
 			for x := i - 1; i > 0; x--{
 				if string(body[x]) == "("{
+					fmt.Println("Second open param")
 					//check - 8 , if the word is function then steo here
 					if string(body[x-8:x]) == "function" || string(body[x-9:x]) == "function "{
 						fmt.Println("second found!")

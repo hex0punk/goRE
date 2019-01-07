@@ -24,18 +24,18 @@ fa}function Ra(a,b,c){void 0===c&&(c=[]);var e=new Ya("Platform: "+b);return fun
 !fa.destroyed&&fa.destroy()}function va(){return fa&&!fa.destroyed?fa:null}function gb(a,b,c){try{var e=c();return Q(e)?e.catch(function(c){throw b.runOutsideAngular(function(){return a.handleError(c)}),c;}):e}catch(Gc){throw b.runOutsideAngular(function(){return a.handleError(Gc)}),Gc;}}function vb(a,b){b=a.indexOf(b);-1<b&&a.splice(b,1)}function Fb(a,b){var c=cd.get(a);if(c)throw Error("Duplicate module registered for "+a+" - "+c.moduleType.name+" vs "+b.moduleType.name);cd.set(a,b)}function Va(a){var b=`
 
 func TestGetJsFunctionWithHint(t *testing.T){
-	enableProdModeFunc := GetJsFunctionWithHint(jsEasy, "\"Cannot enable prod mode")
-	assert.Equal(t, enableProdModeFunc.Name, "Qa")
-	assert.Equal(t, enableProdModeFunc.Raw, `function Qa(){if(ib)throw Error("Cannot enable prod mode after platform setup.");ge=!1}`)
-	assert.Equal(t, enableProdModeFunc.Body, `{if(ib)throw Error("Cannot enable prod mode after platform setup.");ge=!1}`)
-
-	enableProdModeFunc = GetJsFunctionWithHint(jsMedium, "\"Cannot enable prod mode")
-	assert.Equal(t, enableProdModeFunc.Name, "Qa")
-	assert.Equal(t, enableProdModeFunc.Raw, `function Qa(){if(ib)throw Error("Cannot enable prod mode after platform setup.");if(1=1){console.log(true)}else{console.log(false)}ge=!1}`)
-	assert.Equal(t, enableProdModeFunc.Body, `{if(ib)throw Error("Cannot enable prod mode after platform setup.");if(1=1){console.log(true)}else{console.log(false)}ge=!1}`)
-
-	//enableProdModeFunc = GetJsFunctionWithHint(jsHard, "\"Cannot enable prod mode")
+	//enableProdModeFunc := GetJsFunctionWithHint(jsEasy, "\"Cannot enable prod mode")
 	//assert.Equal(t, enableProdModeFunc.Name, "Qa")
-	//assert.Equal(t, enableProdModeFunc.Raw, `function Qa(){if(ib){throw Error("Cannot enable prod mode after platform setup.");if(1=1){console.log(true);if(2=2){console.log("test")}}}ge=!1}`)
-	//assert.Equal(t, enableProdModeFunc.Body, `{if(ib){throw Error("Cannot enable prod mode after platform setup.");if(1=1){console.log(true);if(2=2){console.log("test")}}}ge=!1}`)
+	//assert.Equal(t, enableProdModeFunc.Raw, `function Qa(){if(ib)throw Error("Cannot enable prod mode after platform setup.");ge=!1}`)
+	//assert.Equal(t, enableProdModeFunc.Body, `{if(ib)throw Error("Cannot enable prod mode after platform setup.");ge=!1}`)
+	//
+	//enableProdModeFunc = GetJsFunctionWithHint(jsMedium, "\"Cannot enable prod mode")
+	//assert.Equal(t, enableProdModeFunc.Name, "Qa")
+	//assert.Equal(t, enableProdModeFunc.Raw, `function Qa(){if(ib)throw Error("Cannot enable prod mode after platform setup.");if(1=1){console.log(true)}else{console.log(false)}ge=!1}`)
+	//assert.Equal(t, enableProdModeFunc.Body, `{if(ib)throw Error("Cannot enable prod mode after platform setup.");if(1=1){console.log(true)}else{console.log(false)}ge=!1}`)
+
+	enableProdModeFunc = GetJsFunctionWithHint(jsHard, "\"Cannot enable prod mode")
+	assert.Equal(t, enableProdModeFunc.Name, "Qa")
+	assert.Equal(t, enableProdModeFunc.Raw, `function Qa(){if(ib){throw Error("Cannot enable prod mode after platform setup.");if(1=1){console.log(true);if(2=2){console.log("test")}}}ge=!1}`)
+	assert.Equal(t, enableProdModeFunc.Body, `{if(ib){throw Error("Cannot enable prod mode after platform setup.");if(1=1){console.log(true);if(2=2){console.log("test")}}}ge=!1}`)
 }
