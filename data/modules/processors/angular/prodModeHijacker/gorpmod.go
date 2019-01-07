@@ -14,8 +14,10 @@ type jsFunction struct {
 	Name       string
 	Body       string
 	Raw        string
-	StartIndex int
-	EndIndex   int
+	Start      int
+	End        int
+	BodyStart  int
+	Expression bool
 }
 
 func (p *prodModeHijacker) Init() {
@@ -33,50 +35,88 @@ func (p *prodModeHijacker) Init() {
 const newProdModeFunc = `{console.log("hijacked enableProdMode function!")}`
 
 func (p *prodModeHijacker) Process(webData modules.WebData) (string, error) {
-	enableProdModeFunc := getJsFunction(webData.Body, "\"Cannot enable prod mode")
-	if enableProdModeFunc == nil{
+	enableProdModeFunc := GetJsFunction(webData.Body, "\"Cannot enable prod mode")
+	if enableProdModeFunc == nil {
 		return webData.Body, nil
 	}
 
 	return strings.Replace(webData.Body, enableProdModeFunc.Body, newProdModeFunc, -1), nil
 }
 
-func getJsFunction(body string, canary string) *jsFunction {
+func GetJsFunction(body string, canary string) *jsFunction {
 	idx := strings.Index(body, canary)
 	if idx == -1 {
 		return nil
 	}
 
 	result := jsFunction{}
-	// find end index for function
-	// TODO: for a general function finder, this would be useless as it
-	// is a naive way to parse for functions. So this needs fixed
-	for i := idx; i < len(body); i++ {
-		funcChar := string(body[i])
-		if funcChar == "}" {
-			result.EndIndex = i + 1
+
+	// find the start index for function statement/body
+	// start at canary location
+	// and look for a function declaration indicator
+	for i := idx; i < len(body); i-- {
+		if string(body[i-2:i]) == "){" {
+			result.BodyStart = i - 1
+			break
+		} else if string(body[i-3:i]) == ") {" {
+			result.BodyStart = i - 2
 			break
 		}
 	}
 
-	//find start index
-	for i := idx; i < len(body); i-- {
-		// word "function" has 8 characters
+	// find the start index of entire function
+	// starting with word function
+	for i := result.BodyStart; i < len(body); i-- {
 		funcWord := string(body[i-8 : i])
 		if funcWord == "function" {
-			result.StartIndex = i - 8
+			result.Start = i - 8
 			break
 		}
 	}
 
-	result.Raw = body[result.StartIndex:result.EndIndex]
-	// now get the function symbol or name
-	idx = strings.Index(result.Raw, "(")
-	out := strings.TrimLeft(strings.TrimSuffix(result.Raw, result.Raw[idx:]), "function ")
-	result.Name = strings.TrimSpace(out)
+	// find end index for function
+	tracker := 0
+	for i := result.BodyStart; i < len(body); i++ {
+		if string(body[i]) == "{" {
+			tracker++
+		} else if string(body[i]) == "}" {
+			tracker--
+			if tracker == 0 {
+				result.End = i + 1
+				break
+			}
+		}
+	}
 
-	// get the function body
-	result.Body = result.Raw[strings.Index(result.Raw, "{"):]
+	// is is declared as an expression?
+	result.Expression = strings.Contains(body[result.Start:result.End], "function (") ||
+		strings.Contains(body[result.Start:result.End], "function(")
+
+	if result.Expression {
+		for i := result.BodyStart; i < len(body); i-- {
+			varWord := string(body[i-3 : i])
+			if varWord == "var" {
+				result.Start = i - 3
+				break
+			}
+		}
+	}
+	result.Raw = body[result.Start:result.End]
+	result.Body = body[result.BodyStart:result.End]
+
+	// now get the function symbol or name
+	var nameEnd string
+	var nameBegin string
+	if result.Expression {
+		nameBegin = "var "
+		nameEnd = "="
+	} else {
+		nameBegin = "function "
+		nameEnd = "("
+	}
+	idx = strings.Index(result.Raw, nameEnd)
+	out := strings.TrimLeft(strings.TrimSuffix(result.Raw, result.Raw[idx:]), nameBegin)
+	result.Name = strings.TrimSpace(out)
 
 	return &result
 }
