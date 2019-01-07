@@ -1,4 +1,4 @@
-// Package debugger provides utilities and structs that can be used by modules
+// Package api provides utilities and structs that can be used by modules
 package api
 
 import (
@@ -18,7 +18,7 @@ type JsFunction struct {
 }
 
 // GetJSFunctionWithHint finds a function in a js file using a hint to locate it.
-// It returns a pointer to a jsFunction object
+// It returns a pointer to a jsFunction object and an error
 func GetJsFunctionWithHint(body string, hint string) (*JsFunction, error) {
 	// TODO: find params as well
 	// TODO: this could break if closures inside function
@@ -62,6 +62,8 @@ func GetJsFunctionWithHint(body string, hint string) (*JsFunction, error) {
 	return &result, nil
 }
 
+// GetJSFunctionWithName finds a function in a js file using a function name to locate it.
+// It returns a pointer to a jsFunction object and an error
 func GetJsFunctionWithName(body string, name string) (*JsFunction, error) {
 	signatures := []string{
 		"var " + name + " = function",
