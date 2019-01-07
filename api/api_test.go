@@ -23,7 +23,7 @@ d),a.runOutsideAngular(function(){return a.onError.emit(d)}),!1}})}function ra(a
 fa}function Ra(a,b,c){void 0===c&&(c=[]);var e=new Ya("Platform: "+b);return function(b){void 0===b&&(b=[]);var d=va();return d&&!d.injector.get(xb,!1)||(a?a(c.concat(b).concat({provide:e,useValue:!0})):pa(bd.resolveAndCreate(c.concat(b).concat({provide:e,useValue:!0})))),Oa(e)}}function Oa(a){var b=va();if(!b)throw Error("No platform exists!");if(!b.injector.get(a,null))throw Error("A platform with a different configuration has been created. Please destroy it first.");return b}function Ta(){fa&&
 !fa.destroyed&&fa.destroy()}function va(){return fa&&!fa.destroyed?fa:null}function gb(a,b,c){try{var e=c();return Q(e)?e.catch(function(c){throw b.runOutsideAngular(function(){return a.handleError(c)}),c;}):e}catch(Gc){throw b.runOutsideAngular(function(){return a.handleError(Gc)}),Gc;}}function vb(a,b){b=a.indexOf(b);-1<b&&a.splice(b,1)}function Fb(a,b){var c=cd.get(a);if(c)throw Error("Duplicate module registered for "+a+" - "+c.moduleType.name+" vs "+b.moduleType.name);cd.set(a,b)}function Va(a){var b=`
 
-func TestGetJsFunctionWithHint(t *testing.T){
+func TestGetJsFunctionWithHint(t *testing.T) {
 	easy, _ := GetJsFunctionWithHint(jsEasy, "\"Cannot enable prod mode")
 	assert.Equal(t, easy.Name, "Qa")
 	assert.Equal(t, easy.Raw, `function Qa(){if(ib)throw Error("Cannot enable prod mode after platform setup.");ge=!1}`)
@@ -40,8 +40,7 @@ func TestGetJsFunctionWithHint(t *testing.T){
 	assert.Equal(t, hard.Body, `{if(ib){throw Error("Cannot enable prod mode after platform setup.");if(1=1){console.log(true);if(2=2){console.log("test")}}}ge=!1}`)
 }
 
-
-func TestGetJsFunctionWithName(t *testing.T){
+func TestGetJsFunctionWithName(t *testing.T) {
 	easy, _ := GetJsFunctionWithName(jsEasy, "Qa")
 	assert.Equal(t, easy.Name, "Qa")
 	assert.Equal(t, easy.Raw, `function Qa(){if(ib)throw Error("Cannot enable prod mode after platform setup.");ge=!1}`)
