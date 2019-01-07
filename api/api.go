@@ -34,7 +34,7 @@ func GetJsFunctionWithHint(body string, hint string) (*JsFunction, error) {
 	// and look for a function declaration indicator
 	for i := idx; i > 0; i-- {
 		if string(body[i-8:i]) == "function" {
-			for x := i; x < len(body); x++{
+			for x := i; x < len(body); x++ {
 				if string(body[x]) == "{" {
 					result.BodyStart = x
 					break
@@ -55,27 +55,27 @@ func GetJsFunctionWithHint(body string, hint string) (*JsFunction, error) {
 	}
 
 	err := processJsFunction(&result, body)
-	if err != nil{
-		return  nil, err
+	if err != nil {
+		return nil, err
 	}
 
 	return &result, nil
 }
 
-func GetJsFunctionWithName(body string, name string) (*JsFunction, error){
+func GetJsFunctionWithName(body string, name string) (*JsFunction, error) {
 	signatures := []string{
-		"var "+name+" = function",
-		"var "+name+" =function",
-		"var "+name+"= function",
-		"var "+name+"=function",
-		"function "+name+" (",
-		"function "+name+"(",
+		"var " + name + " = function",
+		"var " + name + " =function",
+		"var " + name + "= function",
+		"var " + name + "=function",
+		"function " + name + " (",
+		"function " + name + "(",
 	}
 	result := JsFunction{
-		Start : -1,
-		Name: name,
+		Start: -1,
+		Name:  name,
 	}
-	for _, signature := range signatures{
+	for _, signature := range signatures {
 		result.Start = strings.Index(body, signature)
 		if result.Start != -1 {
 			break
@@ -93,8 +93,8 @@ func GetJsFunctionWithName(body string, name string) (*JsFunction, error){
 		}
 	}
 	err := processJsFunction(&result, body)
-	if err != nil{
-		return  nil, err
+	if err != nil {
+		return nil, err
 	}
 
 	return &result, nil
@@ -102,9 +102,9 @@ func GetJsFunctionWithName(body string, name string) (*JsFunction, error){
 
 // This is only to avoid code duplication but it requires that
 // BodyStart and Start values are found first for it to work
-func processJsFunction(j *JsFunction, body string) error{
+func processJsFunction(j *JsFunction, body string) error {
 	// find end index for function
-	if j.Start == 0 || j.BodyStart == 0{
+	if j.Start == 0 || j.BodyStart == 0 {
 		return fmt.Errorf("JsFunction pointer must include values for Start and Body Start")
 	}
 	tracker := 0
@@ -137,7 +137,7 @@ func processJsFunction(j *JsFunction, body string) error{
 	j.Body = body[j.BodyStart:j.End]
 
 	// now get the function symbol or name
-	if j.Name == ""{
+	if j.Name == "" {
 		var nameEnd string
 		var nameBegin string
 		if j.Expression {

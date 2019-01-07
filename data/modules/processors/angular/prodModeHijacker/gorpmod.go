@@ -26,11 +26,12 @@ func (p *prodModeHijacker) Init() {
 const newProdModeFunc = `{console.log("hijacked enableProdMode function!")}`
 
 func (p *prodModeHijacker) Process(webData modules.WebData) (string, error) {
-	enableProdModeFunc := api.GetJsFunctionWithHint(webData.Body, "\"Cannot enable prod mode")
-	if enableProdModeFunc == nil {
+	enableProdModeFunc, err := api.GetJsFunctionWithHint(webData.Body, "\"Cannot enable prod mode")
+	if err != nil || enableProdModeFunc == nil {
+		// if we return an error the debugger will panic
+		// and this does not warrant that
 		return webData.Body, nil
 	}
-
 	return strings.Replace(webData.Body, enableProdModeFunc.Body, newProdModeFunc, -1), nil
 }
 

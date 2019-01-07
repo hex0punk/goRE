@@ -20,7 +20,7 @@ func (f *findreplace) Init() {
 		Description: "Simple find replace plugin for responses.",
 		Notes:       "",
 	}
-	f.Options = []modules.Option {
+	f.Options = []modules.Option{
 		{
 			Name:        "ProcessDocuments",
 			Value:       "true",
@@ -71,11 +71,11 @@ func (f *findreplace) Process(webData modules.WebData) (string, error) {
 	if err != nil {
 		panic(err)
 	}
-	if url != "" && !strings.Contains(webData.Url, url){
+	if url != "" && !strings.Contains(webData.Url, url) {
 		return webData.Body, nil
 	}
 
-	if !strings.Contains(webData.Body, f.Options[2].Value){
+	if !strings.Contains(webData.Body, f.Options[2].Value) {
 		return webData.Body, nil
 	}
 	log.Println("[+] findandreplace: Found something to replace!")
