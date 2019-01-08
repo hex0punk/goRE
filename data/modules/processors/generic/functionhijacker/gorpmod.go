@@ -22,16 +22,22 @@ func (f *functionHijacker) Init() {
 	}
 	f.Options = []modules.Option{
 		{
-			Name:        "FunctionName",
+			Name:        "Indicator",
 			Value:       "",
 			Required:    true,
-			Description: "The name of the function to hijack",
+			Description: "The name of the function to hijack or the hint to be used",
 		},
 		{
 			Name:        "NewBody",
 			Value:       "console.log('function hijacked!')",
 			Required:    true,
 			Description: "The new function body",
+		},
+		{
+			Name:        "Finder",
+			Value:       "Name",
+			Required:    true,
+			Description: "Should the function be found with a function Name or a Hint.",
 		},
 	}
 }
@@ -42,7 +48,13 @@ func (f *functionHijacker) Process(webData modules.WebData) (string, error) {
 	if name == "" {
 		return webData.Body, nil
 	}
-	enableProdModeFunc, err := api.GetJsFunctionWithName(webData.Body, name)
+	var enableProdModeFunc *api.JsFunction
+	var err error
+	if f.Options[2].Value == "Hint"{
+		enableProdModeFunc, err = api.GetJsFunctionWithHint(webData.Body, name)
+	} else {
+		enableProdModeFunc, err = api.GetJsFunctionWithName(webData.Body, name)
+	}
 	if err != nil || enableProdModeFunc == nil {
 		// if we return an error the debugger will panic
 		// and this does not warrant that
