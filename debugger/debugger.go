@@ -184,3 +184,47 @@ func (d *Debugger) processBody(data modules.WebData) (string, error) {
 	}
 	return result.Body, nil
 }
+
+// Potentially, this could call inspectors
+// and pass inspector functions a DebuggerScriptParsedEvent
+// then allow the pluing to use libraries from gcd to do fun stuff
+func (d *Debugger) SetupChromeDebuggerEvents(){
+	d.Target.Subscribe("Debugger.scriptParsed", func(target *gcd.ChromeTarget, v []byte) {
+		//Script parsed event
+		fmt.Println("Fired!")
+		spe := &gcdapi.DebuggerScriptParsedEvent{}
+		err := json.Unmarshal(v, spe)
+		if err != nil {
+			log.Fatalf("error unmarshalling event data: %v\n", err)
+		}
+
+		if spe.Params.StackTrace != nil && spe.Params.StackTrace.CallFrames != nil{
+			cf := spe.Params.StackTrace.CallFrames
+			fmt.Print("URL ----> ")
+			fmt.Println(spe.Params.Url)
+
+			fmt.Print("ID ----> ")
+			fmt.Println(spe.Params.ScriptId)
+			for _,v := range cf{
+				if v.Url != ""{
+					fmt.Println(v.FunctionName)
+					fmt.Println()
+				}
+			}
+
+			r, err := target.Debugger.SearchInContent(spe.Params.ScriptId, "Cannot enable prod mode", false, false)
+			if err == nil{
+				fmt.Print("FOUND! -> ")
+				if len(r) > 0{
+					fmt.Print(r[0].LineNumber)
+					//fmt.Println("  " + r[0].LineContent)
+				}
+			}
+			//s, err := d.Target.Debugger.GetScriptSource(spe.Params.ScriptId)
+			//if err == nil{
+			//	// This is the CONTENT of the script, unminified
+			//	//fmt.Println("source is " + s)
+			//}
+		}
+	})
+}
