@@ -8,6 +8,7 @@ import (
 	"github.com/DharmaOfCode/gorp/modules"
 	"github.com/wirepair/gcd"
 	"github.com/wirepair/gcd/gcdapi"
+	"io/ioutil"
 	"log"
 	"strconv"
 	"strings"
@@ -197,7 +198,39 @@ func (d *Debugger) SetupChromeDebuggerEvents(){
 		if err != nil {
 			log.Fatalf("error unmarshalling event data: %v\n", err)
 		}
+		fmt.Print("item -> ")
+		fmt.Println(spe.Params.Url)
 
+		if spe.Params.Url == "https://vue-vuex-realworld.netlify.com/js/chunk-vendors.5007bb35.js"{
+			fmt.Print("TARGET ID ----> ")
+			fmt.Println(spe.Params.ScriptId)
+
+			rlc, err := ioutil.ReadFile("/Users/alexuseche/Tests/third.js")
+			if err != nil {
+				fmt.Print(err)
+			}
+			str := string(rlc)
+
+			//var Result struct {
+			//	CallFrames        []*DebuggerCallFrame
+			//	StackChanged      bool
+			//	AsyncStackTrace   *RuntimeStackTrace
+			//	AsyncStackTraceId *RuntimeStackTraceId
+			//	ExceptionDetails  *RuntimeExceptionDetails
+			//}
+
+			_,cha,_,_,as,err := target.Debugger.SetScriptSource(spe.Params.ScriptId, str, false)
+			if err != nil{
+				fmt.Print(err.Error())
+			}
+
+			if as != nil{
+				fmt.Println(as)
+			}
+			if cha{
+				fmt.Println("SUCCESS?")
+			}
+		}
 		if spe.Params.StackTrace != nil && spe.Params.StackTrace.CallFrames != nil{
 			cf := spe.Params.StackTrace.CallFrames
 			fmt.Print("URL ----> ")
@@ -225,6 +258,11 @@ func (d *Debugger) SetupChromeDebuggerEvents(){
 			//	// This is the CONTENT of the script, unminified
 			//	//fmt.Println("source is " + s)
 			//}
+
+			//src := &gcdapi.DebuggerSetScriptSourceParams{
+			//
+			//}
+
 		}
 	})
 }
