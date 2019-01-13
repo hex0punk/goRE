@@ -16,6 +16,7 @@ Gorp plugins are essentially modules that you can use to modify or audit web res
 
 - **Inspectors:**: inspectors conduct  analysis on responses. For instance, you may want to record all references to API calls made by the application by inspecting JavaScript code. This way, rather than waiting until the browser makes a call to `/api/admin/adduser`, you may be able to find a reference to that path in the client side code. JS Framework specific inspectors could also be used to inspect things such as services, controllers, authorization controllers, etc. Inspectors do not modify responses.
 
+
 ### Recompiling gorp plugins
 At the moment there are constant changes on the module package. A change in that package would require that plugins are recompiled. This can be a pain as every module would need to be recompiled, so we have automated that task. Just run the below command and all modules will be recompiled:
 
@@ -25,16 +26,113 @@ go run main.go -p
 
 ## Using gorp
 1. Create a configuration file that uses the structure used by the `config.yaml` file in the root directory of this repo.
-2. You can find information about any plugin by running this command:
+2. Make sure the plugins that you want to use are compiled. You can compile all available plugins by running `go run main.go -p`
+3. You can find information about any plugin by running this command:
    ```bash
    go run main.go -i -m "/the/path/of/the/module/"
    ```
-3. To run gorp:
+4. To run gorp:
    ```bash
    go run main.g -c "./path/to/your/config/file.yml"
    ```
    
 If run successfully, a new Chrome window should open up with two tabs. Use the second tab to navigate to the site that you are currently pentesting. Press `ctrl + c` to end the session (TODO: make a more effective way to end sessions).
+
+### Ok,but what can I actually do with gorp?
+
+There are 7 modules available at the moment. You can find information about each plugin by running `go run main.go -i /path/to/module/`. 
+
+Here are some fun things that you can do right now. Each task is followed by a code snippet showing how your config would look like to enable the right plugins. Note that you enable multiple plugins at the same time.
+
+**1) Force Angular 2 application to load in develoment mode**
+
+```yaml
+scope: ""
+verbose: False
+flags: ["-na", "--disable-gpu", "--window-size=1200,800", "--auto-open-devtools-for-tabs","--disable-popup-blocking"]
+modules:
+  processors:
+    - path: "/data/modules/processors/angular/prodModeHijacker/"
+      options: {}
+```
+
+**2) Hijack and alter a function loaded by a web application**
+
+```yaml
+scope: ""
+verbose: False
+flags: ["-na", "--disable-gpu", "--window-size=1200,800", "--auto-open-devtools-for-tabs","--disable-popup-blocking"]
+modules:
+  processors:
+    - path: "/data/modules/processors/generic/functionhijacker/"
+      options:
+         Indicator: "isLoggedIn"
+         NewBody: "return true"
+```
+
+**3) Record API calls in a file**
+
+```yaml
+scope: ""
+verbose: False
+flags: ["-na", "--disable-gpu", "--window-size=1200,800", "--auto-open-devtools-for-tabs","--disable-popup-blocking"]
+modules:
+  inspectors:
+    - path: "/data/modules/inspectors/generic/apifinder/"
+      options:
+        FilePath : "./logs/apifinds.txt"
+```
+
+**4) Inject code in an existing function**
+
+```yaml
+scope: ""
+verbose: False
+flags: ["-na", "--disable-gpu", "--window-size=1200,800", "--auto-open-devtools-for-tabs","--disable-popup-blocking"]
+modules:
+  processors:
+   - path: "/data/modules/processors/generic/injector/"
+      options:
+        FunctionName: "isAdmin"
+        Injection: "console.log('function called, injection confirmed!');return true;"}
+```
+
+**5) Set all ngIf and ng-if attributes to always return true (applies to Angular apps)**
+
+```
+scope: ""
+verbose: False
+flags: ["-na", "--disable-gpu", "--window-size=1200,800", "--auto-open-devtools-for-tabs","--disable-popup-blocking"]
+modules:
+  processors:
+    - path: "/data/modules/processors/angular/unhider/"
+      options: {}
+```
+
+
+**6) Simple find and replace**
+```
+scope: ""
+verbose: False
+flags: ["-na", "--disable-gpu", "--window-size=1200,800", "--auto-open-devtools-for-tabs","--disable-popup-blocking"]
+modules:
+  processors:
+    - path: "/data/modules/processors/generic/findreplace/"
+      options:
+         Find: "isAdmin=false"
+         Replace: "isAdmin=true"
+```
+
+**7) Unhide all hidden input and add highlight what the input is used for
+```
+scope: ""
+verbose: False
+flags: ["-na", "--disable-gpu", "--window-size=1200,800", "--auto-open-devtools-for-tabs","--disable-popup-blocking"]
+modules:
+  processors:
+    - path: "/data/modules/processors/generic/unhider/"
+      options: {}
+```
 
 ## Creating your own gorp plugin
 The power of gorp is in the plugins. Creating your own plugin is simple.
