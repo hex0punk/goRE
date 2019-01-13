@@ -16,7 +16,7 @@ func (f *findreplace) Init() {
 		Name:        "FindReplace",
 		DocTypes:    []string{"Document", "Script", "XHR"},
 		Author:      []string{"codedharma", "hex0punk"},
-		Path:        "./data/modules/generic/findreplace/gorpmod.go",
+		Path:        "./data/modules/processors/generic/findreplace/gorpmod.go",
 		Description: "Simple find replace plugin for responses.",
 		Notes:       "",
 	}
