@@ -40,14 +40,14 @@ If run successfully, a new Chrome window should open up with two tabs. Use the s
 
 ### Ok, but what can I actually do with gorp?
 
-There are 7 modules available at the moment. You can find information about each plugin by running go run main.go -i /path/to/module/.
+There are 7 modules available at the moment. You can find information about each plugin by running `go run main.go -i /path/to/module/`
 
 Here are some fun things that you can do right now. Each task is followed by a code snippet showing how your config would look like to enable the right plugins. Note that you can enable multiple plugins at the same time.
 
 **1) Force Angular 2 application to load in development mode**
 
 ```yaml
-scope: ""
+scope: "example.com"
 verbose: False
 flags: ["-na", "--disable-gpu", "--window-size=1200,800", "--auto-open-devtools-for-tabs","--disable-popup-blocking"]
 modules:
@@ -59,7 +59,7 @@ modules:
 **2) Hijack and alter a function loaded by a web application**
 
 ```yaml
-scope: ""
+scope: "example.com"
 verbose: False
 flags: ["-na", "--disable-gpu", "--window-size=1200,800", "--auto-open-devtools-for-tabs","--disable-popup-blocking"]
 modules:
@@ -73,7 +73,7 @@ modules:
 **3) Record API calls in a file**
 
 ```yaml
-scope: ""
+scope: "example.com"
 verbose: False
 flags: ["-na", "--disable-gpu", "--window-size=1200,800", "--auto-open-devtools-for-tabs","--disable-popup-blocking"]
 modules:
@@ -86,7 +86,7 @@ modules:
 **4) Inject code in an existing function**
 
 ```yaml
-scope: ""
+scope: "example.com"
 verbose: False
 flags: ["-na", "--disable-gpu", "--window-size=1200,800", "--auto-open-devtools-for-tabs","--disable-popup-blocking"]
 modules:
@@ -99,8 +99,8 @@ modules:
 
 **5) Set all ngIf and ng-if attributes to always return true (applies to Angular apps)**
 
-```
-scope: ""
+```yaml
+scope: "example.com"
 verbose: False
 flags: ["-na", "--disable-gpu", "--window-size=1200,800", "--auto-open-devtools-for-tabs","--disable-popup-blocking"]
 modules:
@@ -111,8 +111,9 @@ modules:
 
 
 **6) Simple find and replace**
-```
-scope: ""
+
+```yaml
+scope: "example.com"
 verbose: False
 flags: ["-na", "--disable-gpu", "--window-size=1200,800", "--auto-open-devtools-for-tabs","--disable-popup-blocking"]
 modules:
@@ -124,8 +125,9 @@ modules:
 ```
 
 **7) Unhide all hidden input and add highlight what the input is used for
-```
-scope: ""
+
+```yaml
+scope: "example.com"
 verbose: False
 flags: ["-na", "--disable-gpu", "--window-size=1200,800", "--auto-open-devtools-for-tabs","--disable-popup-blocking"]
 modules:
