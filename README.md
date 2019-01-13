@@ -38,13 +38,13 @@ go run main.go -p
    
 If run successfully, a new Chrome window should open up with two tabs. Use the second tab to navigate to the site that you are currently pentesting. Press `ctrl + c` to end the session (TODO: make a more effective way to end sessions).
 
-### Ok,but what can I actually do with gorp?
+### Ok, but what can I actually do with gorp?
 
-There are 7 modules available at the moment. You can find information about each plugin by running `go run main.go -i /path/to/module/`. 
+There are 7 modules available at the moment. You can find information about each plugin by running go run main.go -i /path/to/module/.
 
-Here are some fun things that you can do right now. Each task is followed by a code snippet showing how your config would look like to enable the right plugins. Note that you enable multiple plugins at the same time.
+Here are some fun things that you can do right now. Each task is followed by a code snippet showing how your config would look like to enable the right plugins. Note that you can enable multiple plugins at the same time.
 
-**1) Force Angular 2 application to load in develoment mode**
+**1) Force Angular 2 application to load in development mode**
 
 ```yaml
 scope: ""
