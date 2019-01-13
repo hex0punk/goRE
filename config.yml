@@ -9,6 +9,10 @@ modules:
       options: {}
     - path: "/data/modules/processors/angular/prodModeHijacker/"
       options: {}
+    - path: "/data/modules/processors/generic/injector/"
+      options:
+        FunctionName: "isAdmin"
+        Injection: "console.log('function called, injection confirmed!');return true;"
   inspectors:
     - path: "/data/modules/inspectors/generic/apifinder/"
       options:
