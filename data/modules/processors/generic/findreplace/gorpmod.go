@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/DharmaOfCode/gorp/modules"
+	"io/ioutil"
 	"log"
 	"strings"
 )
@@ -51,6 +52,12 @@ func (f *findreplace) Init() {
 			Required:    false,
 			Description: "URL of the file you are targeting. All files will be processed when left empty",
 		},
+		{
+			Name:        "NewBodyPath",
+			Value:       "",
+			Required:    false,
+			Description: "Path for local file containing new body",
+		},
 	}
 }
 
@@ -77,6 +84,18 @@ func (f *findreplace) Process(webData modules.WebData) (string, error) {
 
 	if !strings.Contains(webData.Body, f.Options[2].Value) {
 		return webData.Body, nil
+	}
+	path, err := modules.GetModuleOption(f.Options, "NewBodyPath")
+	if err != nil {
+		panic(err)
+	}
+	if path != ""{
+		dat, err := ioutil.ReadFile(path)
+		if err != nil{
+			panic(err)
+		}
+		log.Println("[+] findandreplace: Replacing with file body")
+		return string(dat), nil
 	}
 	log.Println("[+] findandreplace: Found something to replace!")
 	return strings.Replace(webData.Body, f.Options[2].Value, f.Options[3].Value, -1), nil

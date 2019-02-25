@@ -3,16 +3,10 @@ verbose: False
 flags: ["-na", "--disable-gpu", "--window-size=1200,800", "--auto-open-devtools-for-tabs","--disable-popup-blocking"]
 modules:
   processors:
-    - path: "/data/modules/processors/angular/unhider/"
-      options: {}
-    - path: "/data/modules/processors/generic/unhider/"
-      options: {}
-    - path: "/data/modules/processors/angular/prodModeHijacker/"
-      options: {}
-    - path: "/data/modules/processors/generic/injector/"
+    - path: "/data/modules/processors/generic/findreplace/"
       options:
-        FunctionName: "isAdmin"
-        Injection: "console.log('function called, injection confirmed!');return true;"
+        NewBodyPath: ""
+        URL: ""
   inspectors:
     - path: "/data/modules/inspectors/generic/apifinder/"
       options:
