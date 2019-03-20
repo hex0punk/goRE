@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/DharmaOfCode/gorp/modules"
+	"github.com/DharmaOfCode/gorp/option"
 	"log"
 	"os"
 	"strings"
@@ -10,7 +11,7 @@ import (
 
 type apifinder struct {
 	Registry modules.Registry
-	Options  []modules.Option
+	Options  []option.Option
 }
 
 func (a *apifinder) Init() {
@@ -22,7 +23,7 @@ func (a *apifinder) Init() {
 		Description: "Finds apis in javascript code and save it to a chosen file",
 	}
 
-	a.Options = []modules.Option{
+	a.Options = []option.Option{
 		{
 			Name:        "FilePath",
 			Value:       "",
@@ -46,13 +47,13 @@ func (a *apifinder) Inspect(webData modules.WebData) error {
 	if err != nil {
 		panic(err)
 	}
-	if fileName == "" {
+	if fileName.Value == "" {
 		currentTime := time.Now()
-		fileName = currentTime.Format("01-02-2006") + "_apis.txt"
+		fileName.Value = currentTime.Format("01-02-2006") + "_apis.txt"
 	}
 
 	//We append to the existing file
-	f, err = os.OpenFile(fileName, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	f, err = os.OpenFile(fileName.Value, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		panic(err)
 	}
@@ -64,7 +65,7 @@ func (a *apifinder) Inspect(webData modules.WebData) error {
 	if err != nil {
 		panic(err)
 	}
-	stdOut := o == "true"
+	stdOut := o.Value == "true"
 	for _, v := range words {
 		if strings.Contains(v, "api/") {
 			if stdOut {
@@ -88,7 +89,7 @@ func (a *apifinder) GetRegistry() modules.Registry {
 	return a.Registry
 }
 
-func (a *apifinder) GetOptions() []modules.Option {
+func (a *apifinder) GetOptions() []option.Option {
 	return a.Options
 }
 

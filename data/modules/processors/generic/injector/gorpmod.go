@@ -3,11 +3,12 @@ package main
 import (
 	"github.com/DharmaOfCode/gorp/api"
 	"github.com/DharmaOfCode/gorp/modules"
+	"github.com/DharmaOfCode/gorp/option"
 )
 
 type injector struct {
 	Registry modules.Registry
-	Options  []modules.Option
+	Options  []option.Option
 }
 
 func (i *injector) Init() {
@@ -19,7 +20,7 @@ func (i *injector) Init() {
 		Description: "JS code injector.",
 		Notes:       "",
 	}
-	i.Options = []modules.Option{
+	i.Options = []option.Option{
 		{
 			Name:        "FunctionName",
 			Value:       "true",
@@ -75,7 +76,7 @@ func (i *injector) GetRegistry() modules.Registry {
 	return i.Registry
 }
 
-func (i *injector) GetOptions() []modules.Option {
+func (i *injector) GetOptions() []option.Option {
 	return i.Options
 }
 

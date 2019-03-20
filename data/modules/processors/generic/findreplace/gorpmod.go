@@ -5,11 +5,12 @@ import (
 	"io/ioutil"
 	"log"
 	"strings"
+	"github.com/DharmaOfCode/gorp/option"
 )
 
 type findreplace struct {
 	Registry modules.Registry
-	Options  []modules.Option
+	Options  []option.Option
 }
 
 func (f *findreplace) Init() {
@@ -21,7 +22,7 @@ func (f *findreplace) Init() {
 		Description: "Simple find replace plugin for responses.",
 		Notes:       "",
 	}
-	f.Options = []modules.Option{
+	f.Options = []option.Option{
 		{
 			Name:        "ProcessDocuments",
 			Value:       "true",
@@ -78,26 +79,48 @@ func (f *findreplace) Process(webData modules.WebData) (string, error) {
 	if err != nil {
 		panic(err)
 	}
-	if url != "" && !strings.Contains(webData.Url, url) {
+	urlIndex := 0
+	if url.IsList(){
+		urlList := url.GetAsList()
+		if urlList != nil{
+			for k, v := range urlList{
+				if !strings.Contains(webData.Url, v){
+					urlIndex = k
+					break
+				}
+			}
+		}
+
+		path, err := modules.GetModuleOption(f.Options, "NewBodyPath")
+		if err != nil {
+			panic(err)
+		}
+		// Check whether we need to find and replace multiple values
+		if path.IsList(){
+			pathList := path.GetAsList()
+			if pathList != nil && len(pathList) >= urlIndex {
+				return f.replaceWithFile(urlList[urlIndex], pathList[urlIndex])
+			}
+		}
+	}
+	if url.Value != "" && !strings.Contains(webData.Url, url.Value) {
 		return webData.Body, nil
 	}
 
 	if !strings.Contains(webData.Body, f.Options[2].Value) {
 		return webData.Body, nil
 	}
-	path, err := modules.GetModuleOption(f.Options, "NewBodyPath")
-	if err != nil {
-		panic(err)
-	}
-	if path != ""{
-		dat, err := ioutil.ReadFile(path)
-		if err != nil{
-			panic(err)
+
+	log.Println("[+] findandreplace: Replacing content	")
+	find := f.Options[2]
+	replace := f.Options[3]
+	replaceList := replace.GetAsList()
+	if find.IsList() && replace.IsList(){
+		for k,v := range find.GetAsList(){
+			return strings.Replace(webData.Body, v, replaceList[k], -1), nil
 		}
-		log.Println("[+] findandreplace: Replacing with file body")
-		return string(dat), nil
 	}
-	log.Println("[+] findandreplace: Found something to replace!")
+
 	return strings.Replace(webData.Body, f.Options[2].Value, f.Options[3].Value, -1), nil
 }
 
@@ -105,8 +128,16 @@ func (f *findreplace) GetRegistry() modules.Registry {
 	return f.Registry
 }
 
-func (f *findreplace) GetOptions() []modules.Option {
+func (f *findreplace) GetOptions() []option.Option {
 	return f.Options
+}
+
+func (f *findreplace) replaceWithFile(url string, path string) (string, error) {
+	dat, err := ioutil.ReadFile(path)
+	if err != nil{
+		panic(err)}
+	log.Println("[+] findandreplace: Replacing with file body")
+	return string(dat), nil
 }
 
 var Processor findreplace

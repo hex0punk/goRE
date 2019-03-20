@@ -6,6 +6,7 @@ import (
 	"github.com/DharmaOfCode/gorp/base"
 	"github.com/fatih/color"
 	"plugin"
+	"github.com/DharmaOfCode/gorp/option"
 )
 
 // Modules holds selected processors and inspectors to be used in a gorp session
@@ -25,19 +26,11 @@ type Registry struct {
 	Notes       string   `json:"notes"`       // Additional information or notes about the module
 }
 
-// Option contains options specific to modules
-type Option struct {
-	Name        string `json:"name"`        // Name of the option
-	Value       string `json:"value"`       // Value of the option
-	Required    bool   `json:"required"`    // Is this a required option?
-	Description string `json:"description"` // A description of the option
-}
-
 // ProcessorModule represents a processor module. Processor modules alter the body of a request or response
 type ProcessorModule struct {
 	Process  func(webData WebData) (string, error)
 	Registry Registry
-	Options  []Option `json:"options"` // A list of configurable options/arguments for the module
+	Options  []option.Option `json:"options"` // A list of configurable options/arguments for the module
 }
 
 // InspectorModule represents an inspector module. Inspectors analyse responses to answer questions about the
@@ -45,13 +38,13 @@ type ProcessorModule struct {
 type InspectorModule struct {
 	Inspect  func(webData WebData) error
 	Registry Registry
-	Options  []Option
+	Options  []option.Option
 }
 
 // Processor identifies the functions that all processor modules must implement.
 type Processor interface {
 	Init()                                   // Init Initializes module data
-	GetOptions() []Option                    // GetOptions returns a list of available options for the module
+	GetOptions() []option.Option                    // GetOptions returns a list of available options for the module
 	GetRegistry() Registry                   // GetRegistry returns an object with meta data describing the module
 	Process(webData WebData) (string, error) // Process alters the body of a request
 }
@@ -59,7 +52,7 @@ type Processor interface {
 // Inspector identifies the functions that all inspector modules must implement.
 type Inspector interface {
 	Init()                         // Init Initializes module data
-	GetOptions() []Option          // GetOptions returns a list of available options for the module
+	GetOptions() []option.Option          // GetOptions returns a list of available options for the module
 	GetRegistry() Registry         // GetRegistry returns an object with meta data describing the module
 	Inspect(webData WebData) error // Inspect inspects web content for discovery and recon purposes
 }
@@ -204,16 +197,16 @@ func (i *InspectorModule) SetOption(name string, value string) error {
 
 // GetModuleOptionValue is used for obtaining the value of a given module option.
 // It returns the value for the option name requested and an error if the option cannot be found.
-func GetModuleOption(p []Option, name string) (string, error) {
+func GetModuleOption(p []option.Option, name string) (*option.Option, error) {
 	for k, v := range p {
 		if name == v.Name {
-			return p[k].Value, nil
+			return &p[k], nil
 		}
 	}
-	return "", fmt.Errorf("option with key %s not found", name)
+	return nil, fmt.Errorf("option with key %s not found", name)
 }
 
-func setModuleOption(options []Option, name string, value string) error {
+func setModuleOption(options []option.Option, name string, value string) error {
 	for k, v := range options {
 		if name == v.Name {
 			options[k].Value = value
@@ -242,7 +235,7 @@ func showInfo(r Registry) {
 	color.Green("Notes: %s", r.Notes)
 }
 
-func printOptions(options []Option) {
+func printOptions(options []option.Option) {
 	for _, v := range options {
 		fmt.Println("[+] option: " + v.Name + " set to: " + v.Value)
 	}

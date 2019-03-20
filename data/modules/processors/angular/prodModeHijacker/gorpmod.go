@@ -3,12 +3,13 @@ package main
 import (
 	"github.com/DharmaOfCode/gorp/api"
 	"github.com/DharmaOfCode/gorp/modules"
+	"github.com/DharmaOfCode/gorp/option"
 	"strings"
 )
 
 type prodModeHijacker struct {
 	Registry modules.Registry
-	Options  []modules.Option
+	Options  []option.Option
 }
 
 func (p *prodModeHijacker) Init() {
@@ -20,7 +21,7 @@ func (p *prodModeHijacker) Init() {
 		Description: "Loads angular 2 code bundled with webpack in development mode, allowing researchers to debug dynamically from the console",
 		Notes:       "",
 	}
-	p.Options = []modules.Option{}
+	p.Options = []option.Option{}
 }
 
 const newProdModeFunc = `{console.log("hijacked enableProdMode function!")}`
@@ -39,7 +40,7 @@ func (p *prodModeHijacker) GetRegistry() modules.Registry {
 	return p.Registry
 }
 
-func (p *prodModeHijacker) GetOptions() []modules.Option {
+func (p *prodModeHijacker) GetOptions() []option.Option {
 	return p.Options
 }
 

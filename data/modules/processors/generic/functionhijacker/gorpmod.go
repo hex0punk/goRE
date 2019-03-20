@@ -3,12 +3,13 @@ package main
 import (
 	"github.com/DharmaOfCode/gorp/api"
 	"github.com/DharmaOfCode/gorp/modules"
+	"github.com/DharmaOfCode/gorp/option"
 	"strings"
 )
 
 type functionHijacker struct {
 	Registry modules.Registry
-	Options  []modules.Option
+	Options  []option.Option
 }
 
 func (f *functionHijacker) Init() {
@@ -20,7 +21,7 @@ func (f *functionHijacker) Init() {
 		Description: "Hijacks and alters a function. The module finds the function by name.",
 		Notes:       "At times a page may load scripts that have functions with the same name, in which case this would not work",
 	}
-	f.Options = []modules.Option{
+	f.Options = []option.Option{
 		{
 			Name:        "Indicator",
 			Value:       "",
@@ -68,7 +69,7 @@ func (f *functionHijacker) GetRegistry() modules.Registry {
 	return f.Registry
 }
 
-func (f *functionHijacker) GetOptions() []modules.Option {
+func (f *functionHijacker) GetOptions() []option.Option {
 	return f.Options
 }
 

@@ -2,13 +2,14 @@ package main
 
 import (
 	"github.com/DharmaOfCode/gorp/modules"
+	"github.com/DharmaOfCode/gorp/option"
 	"github.com/PuerkitoBio/goquery"
 	"strings"
 )
 
 type ngunhide struct {
 	Registry modules.Registry
-	Options  []modules.Option
+	Options  []option.Option
 }
 
 func (n *ngunhide) Init() {
@@ -20,7 +21,7 @@ func (n *ngunhide) Init() {
 		Description: "Unhides elements hidden by angular ng-if or ngIf",
 		Notes:       "This may break the functionality of some angular apps",
 	}
-	n.Options = []modules.Option{}
+	n.Options = []option.Option{}
 }
 
 func (n *ngunhide) Process(webData modules.WebData) (string, error) {
@@ -55,7 +56,7 @@ func (n *ngunhide) GetRegistry() modules.Registry {
 	return n.Registry
 }
 
-func (n *ngunhide) GetOptions() []modules.Option {
+func (n *ngunhide) GetOptions() []option.Option {
 	return n.Options
 }
 
