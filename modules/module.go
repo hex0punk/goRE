@@ -70,6 +70,7 @@ type WebData struct {
 	Headers map[string]interface{}
 	Type    string
 	Url     string
+	Method  string
 }
 
 // InitProcessors initializes modules selected for a gorp session
