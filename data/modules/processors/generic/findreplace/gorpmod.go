@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/DharmaOfCode/gorp/modules"
 	"io/ioutil"
 	"log"
@@ -78,6 +79,7 @@ func (f *findreplace) Process(webData modules.WebData) (string, error) {
 	if err != nil {
 		panic(err)
 	}
+	fmt.Println(url)
 	if url != "" && !strings.Contains(webData.Url, url) {
 		return webData.Body, nil
 	}

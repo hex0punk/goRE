@@ -73,6 +73,7 @@ func (d *Debugger) SetupRequestInterception(params *gcdapi.NetworkSetRequestInte
 		rtype := msg.Params.ResourceType
 		responseHeaders := msg.Params.ResponseHeaders
 		url := msg.Params.Request.Url
+		method := msg.Params.Request.Method
 
 		if msg.Params.IsNavigationRequest {
 			log.Print("\n\n\n\n")
@@ -100,6 +101,7 @@ func (d *Debugger) SetupRequestInterception(params *gcdapi.NetworkSetRequestInte
 					Headers: responseHeaders,
 					Type:    rtype,
 					Url:     url,
+					Method:  method,
 				}
 				go d.CallInspectors(webData)
 

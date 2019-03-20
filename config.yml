@@ -6,7 +6,21 @@ modules:
     - path: "/data/modules/processors/generic/findreplace/"
       options:
         NewBodyPath: ""
-        URL: ""
+        URL: "meow.com/test.js"
+    - path: "/data/modules/processors/generic/findreplace/"
+      options:
+        NewBodyPath: "./"
+        URL: "test.com"
+    - path: "/data/modules/processors/generic/findreplace/"
+      options:
+        NewBodyPath: "./"
+        URL: "bark.com"
+    - path: "/data/modules/processors/generic/unhider/"
+      options: {}
+    - path: "/data/modules/processors/angular/unhider/"
+      options: {}
+    - path: "/data/modules/processors/angular/prodModeHijacker/"
+      options: {}
   inspectors:
     - path: "/data/modules/inspectors/generic/apifinder/"
       options:
