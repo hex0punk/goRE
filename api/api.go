@@ -72,6 +72,7 @@ func GetJsFunctionWithName(body string, name string) (*JsFunction, error) {
 		"var " + name + "=function",
 		"function " + name + " (",
 		"function " + name + "(",
+		name + "=function",
 	}
 	result := JsFunction{
 		Start: -1,
@@ -126,10 +127,16 @@ func processJsFunction(j *JsFunction, body string) error {
 	j.Expression = strings.Contains(body[j.Start:j.End], "function (") ||
 		strings.Contains(body[j.Start:j.End], "function(")
 
+	expIndicator := ""
 	if j.Expression {
 		for i := j.BodyStart; i < len(body); i-- {
+			if string(body[i-1:i]) == ";" || string(body[i-1:i]) == ","{
+				expIndicator = string(body[i-1:i])
+				break
+			}
 			varWord := string(body[i-3 : i])
 			if varWord == "var" {
+				expIndicator = "var "
 				j.Start = i - 3
 				break
 			}
@@ -143,7 +150,7 @@ func processJsFunction(j *JsFunction, body string) error {
 		var nameEnd string
 		var nameBegin string
 		if j.Expression {
-			nameBegin = "var "
+			nameBegin = expIndicator
 			nameEnd = "="
 		} else {
 			nameBegin = "function "

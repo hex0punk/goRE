@@ -37,7 +37,6 @@ func (u *unhide) Process(webData modules.WebData) (string, error) {
 
 	doc.Find("input").Each(func(i int, s *goquery.Selection) {
 		att, ex := s.Attr("type")
-		//s.SetAttr("value", "TEST HERE")
 		if ex && att == "hidden" {
 			var v string
 			v, ex = s.Attr("name")
