@@ -15,9 +15,12 @@ func (o *Option) IsList() bool {
 	return strings.Contains(o.Value, ",")
 }
 
-func (o *Option) GetAsList() []string{
+func (o *Option) GetAsList(delim string) []string{
+	if delim == ""{
+		delim = ","
+	}
 	if o.IsList(){
-		return strings.Split(o.Value, ",")
+		return strings.Split(o.Value, delim)
 	} else {
 		return nil
 	}

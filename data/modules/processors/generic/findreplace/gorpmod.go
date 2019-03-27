@@ -8,6 +8,8 @@ import (
 	"github.com/DharmaOfCode/gorp/option"
 )
 
+const Delimiter = ","
+
 type findreplace struct {
 	Registry modules.Registry
 	Options  []option.Option
@@ -81,7 +83,7 @@ func (f *findreplace) Process(webData modules.WebData) (string, error) {
 	}
 	urlIndex := 0
 	if url.IsList(){
-		urlList := url.GetAsList()
+		urlList := url.GetAsList(Delimiter)
 		if urlList != nil{
 			for k, v := range urlList{
 				if !strings.Contains(webData.Url, v){
@@ -97,7 +99,7 @@ func (f *findreplace) Process(webData modules.WebData) (string, error) {
 		}
 		// Check whether we need to find and replace multiple values
 		if path.IsList(){
-			pathList := path.GetAsList()
+			pathList := path.GetAsList(Delimiter)
 			if pathList != nil && len(pathList) >= urlIndex {
 				return f.replaceWithFile(urlList[urlIndex], pathList[urlIndex])
 			}
@@ -105,6 +107,13 @@ func (f *findreplace) Process(webData modules.WebData) (string, error) {
 	}
 	if url.Value != "" && !strings.Contains(webData.Url, url.Value) {
 		return webData.Body, nil
+	}
+	path, err := modules.GetModuleOption(f.Options, "NewBodyPath")
+	if err != nil{
+		return webData.Body, nil
+	}
+	if path.Value != "" {
+		return f.replaceWithFile(url.Value, path.Value)
 	}
 
 	if !strings.Contains(webData.Body, f.Options[2].Value) {
@@ -114,9 +123,9 @@ func (f *findreplace) Process(webData modules.WebData) (string, error) {
 	log.Println("[+] findandreplace: Replacing content	")
 	find := f.Options[2]
 	replace := f.Options[3]
-	replaceList := replace.GetAsList()
+	replaceList := replace.GetAsList(Delimiter)
 	if find.IsList() && replace.IsList(){
-		for k,v := range find.GetAsList(){
+		for k,v := range find.GetAsList(Delimiter){
 			return strings.Replace(webData.Body, v, replaceList[k], -1), nil
 		}
 	}
