@@ -226,7 +226,7 @@ func setModuleOption(options []Option, name string, value string) error {
 
 func showInfo(r Registry) {
 	color.Green("Module:\r\n\t%s\r\n", r.Name)
-	color.Green("Authors:")
+	color.Green("Doc Types:")
 	for d := range r.DocTypes {
 		color.Green("\t%s", r.DocTypes[d])
 	}
