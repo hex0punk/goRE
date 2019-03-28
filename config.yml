@@ -1,9 +1,9 @@
-scope: "localhost:2753/js/app/"
+scope: ""
 verbose: False
 flags: ["-na", "--disable-gpu", "--window-size=1200,800", "--auto-open-devtools-for-tabs","--disable-popup-blocking"]
 modules:
   processors:
     - path: "/data/modules/processors/generic/findreplace/"
       options:
-        NewBodyPath: "/Users/alexuseche/Projects/Angular/main.pirate.js,/Users/alexuseche/Projects/Angular/auth.services.pirate.js,/Users/alexuseche/Projects/Angular/authInterceptor.service.pirate.js"
-        URL: "http://localhost:2753/js/app/main.js,http://localhost:2753/js/app/services/auth.service.js,http://localhost:2753/js/app/services/authInterceptor.service.js"
+        NewBodyPath: "/Users/alexuseche/Projects/Angular/js-mod.js"
+        URL: "http://18.219.15.163/dist/juice-shop.min.js"

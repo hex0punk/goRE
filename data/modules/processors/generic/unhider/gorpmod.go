@@ -5,11 +5,12 @@ import (
 	"github.com/DharmaOfCode/gorp/modules"
 	"github.com/PuerkitoBio/goquery"
 	"strings"
+	"github.com/DharmaOfCode/gorp/option"
 )
 
 type unhide struct {
 	Registry modules.Registry
-	Options  []modules.Option
+	Options  []option.Option
 }
 
 func (u *unhide) Init() {
@@ -20,7 +21,7 @@ func (u *unhide) Init() {
 		Path:        "./data/modules/generic/unhider/gorpmod.go",
 		Description: "Unhides input elements from responses and adds an indicator for the name attribute",
 	}
-	u.Options = []modules.Option{}
+	u.Options = []option.Option{}
 }
 
 func (u *unhide) Process(webData modules.WebData) (string, error) {
@@ -62,7 +63,7 @@ func (u *unhide) GetRegistry() modules.Registry {
 	return u.Registry
 }
 
-func (u *unhide) GetOptions() []modules.Option {
+func (u *unhide) GetOptions() []option.Option {
 	return u.Options
 }
 
