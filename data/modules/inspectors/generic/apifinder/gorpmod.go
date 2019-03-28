@@ -66,7 +66,7 @@ func (a *apifinder) Inspect(webData modules.WebData) error {
 	}
 	stdOut := o == "true"
 	for _, v := range words {
-		if strings.Contains(v, "api/") {
+		if strings.Contains(v, "api/") || strings.Contains(v, "rest/") {
 			if stdOut {
 				log.Println("[+] API URI:", v)
 			}
@@ -77,7 +77,7 @@ func (a *apifinder) Inspect(webData modules.WebData) error {
 			if _, err = f.WriteString("\n=========================================================="); err != nil {
 				panic(err)
 			}
-			if _, err = f.WriteString("\n[+] API URI:" + v + "\n\n"); err != nil {
+			if _, err = f.WriteString("\n[+] API URI:" + webData.Method + ": " + v + "\n\n"); err != nil {
 				panic(err)
 			}
 		}
