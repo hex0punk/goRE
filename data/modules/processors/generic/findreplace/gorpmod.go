@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/DharmaOfCode/gorp/modules"
 	"io/ioutil"
 	"log"
@@ -81,15 +82,22 @@ func (f *findreplace) Process(webData modules.WebData) (string, error) {
 	if err != nil {
 		panic(err)
 	}
-	urlIndex := 0
+
 	if url.IsList(){
+		urlIndex := 0
+		found := false
 		urlList := url.GetAsList(Delimiter)
 		if urlList != nil{
 			for k, v := range urlList{
-				if !strings.Contains(webData.Url, v){
+				if strings.Contains(webData.Url, v){
 					urlIndex = k
+					found = true
 					break
 				}
+			}
+			if !found{
+				fmt.Println("[+] FindReplace: nothing of interest")
+				return webData.Body, nil
 			}
 		}
 
@@ -101,6 +109,8 @@ func (f *findreplace) Process(webData modules.WebData) (string, error) {
 		if path.IsList(){
 			pathList := path.GetAsList(Delimiter)
 			if pathList != nil && len(pathList) >= urlIndex {
+				fmt.Println("[+] FindReplace: replacing "  + urlList[urlIndex])
+				fmt.Println("[+] FindReplace: with " + pathList[urlIndex])
 				return f.replaceWithFile(urlList[urlIndex], pathList[urlIndex])
 			}
 		}
