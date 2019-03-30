@@ -70,6 +70,7 @@ func (a *apifinder) Inspect(webData modules.WebData) error {
 			if stdOut {
 				log.Println("[+] API URI:", v)
 			}
+			v = strings.TrimLeft(strings.TrimRight(v,`"`),`"`)
 			if _, err = f.WriteString("\n[+] Possible API found in URL:" + webData.Url); err != nil {
 				panic(err)
 			}
