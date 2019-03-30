@@ -24,10 +24,10 @@ func (u *unhide) Init() {
 }
 
 func (u *unhide) Process(webData modules.WebData) (string, error) {
-	if webData.Type != "Document" {
+	if webData.Type != "Document" || webData.Url == "http://merchant.notjet.net/header"{
 		return webData.Body, nil
 	}
-	fmt.Println("Running unhider module...")
+
 	r := strings.NewReader(webData.Body)
 	doc, err := goquery.NewDocumentFromReader(r)
 
@@ -53,8 +53,12 @@ func (u *unhide) Process(webData modules.WebData) (string, error) {
 			s.SetAttr("class", "")
 		}
 	})
-
-	return doc.Html()
+	_, err = doc.Html()
+	if err != nil{
+		fmt.Println("BAD ERROR")
+	}
+	fmt.Println("returning: " + webData.Body)
+	return webData.Body, err
 }
 
 func (u *unhide) GetRegistry() modules.Registry {
