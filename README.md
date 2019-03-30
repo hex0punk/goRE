@@ -67,7 +67,7 @@ modules:
     - path: "/data/modules/processors/generic/functionhijacker/"
       options:
          Indicator: "isLoggedIn"
-         NewBody: "return true"
+         NewBody: "{return true}"
 ```
 
 **3) Record API calls in a file**

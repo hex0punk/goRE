@@ -60,7 +60,6 @@ func (f *functionHijacker) Process(webData modules.WebData) (string, error) {
 		// and this does not warrant that
 		return webData.Body, nil
 	}
-
 	return strings.Replace(webData.Body, enableProdModeFunc.Body, newBody, -1), nil
 }
 
