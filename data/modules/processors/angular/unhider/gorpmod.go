@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/DharmaOfCode/gorp/modules"
 	"github.com/PuerkitoBio/goquery"
 	"strings"
@@ -24,7 +25,7 @@ func (n *ngunhide) Init() {
 }
 
 func (n *ngunhide) Process(webData modules.WebData) (string, error) {
-	if webData.Type != "Document" {
+	if webData.Type != "Document" || webData.Url == "http://merchant.notjet.net/header" {
 		return webData.Body, nil
 	}
 	r := strings.NewReader(webData.Body)
@@ -47,8 +48,13 @@ func (n *ngunhide) Process(webData modules.WebData) (string, error) {
 			s.SetAttr("*ngIf", "true")
 		}
 	})
-
-	return doc.Html()
+	res, err := doc.Html()
+	if err != nil{
+		fmt.Println("BAD ERROR")
+	}
+	fmt.Println("returning: " + res)
+	
+	return res, err
 }
 
 func (n *ngunhide) GetRegistry() modules.Registry {

@@ -1,7 +1,13 @@
-scope: ""
+scope: "merchant.notjet.net"
 verbose: False
 flags: ["-na", "--disable-gpu", "--window-size=1200,800", "--auto-open-devtools-for-tabs","--disable-popup-blocking"]
 modules:
   processors:
     - path: "/data/modules/processors/angular/prodModeHijacker/"
       options: {}
+    - path: "/data/modules/processors/angular/unhider/"
+      options: {}
+  inspectors:
+    - path: "/data/modules/inspectors/generic/apifinder/"
+      options:
+        FilePath: "./logs/apifinds.txt"
