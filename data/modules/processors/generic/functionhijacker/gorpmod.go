@@ -16,7 +16,7 @@ func (f *functionHijacker) Init() {
 		Name:        "functionhijacker",
 		DocTypes:    []string{"Script", "XHR"},
 		Author:      []string{"codedharma", "hex0punk"},
-		Path:        "./data/modules/processors/angular/functionhijacker/gorpmod.go",
+		Path:        "./data/modules/processors/generic/functionhijacker/gorpmod.go",
 		Description: "Hijacks and alters a function. The module finds the function by name.",
 		Notes:       "At times a page may load scripts that have functions with the same name, in which case this would not work",
 	}

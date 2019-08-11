@@ -45,6 +45,7 @@ func (d *Debugger) StartTarget() {
 	target.Console.Enable()
 	target.Page.Enable()
 	target.Debugger.Enable()
+	target.Runtime.Enable()
 	networkParams := &gcdapi.NetworkEnableParams{
 		MaxTotalBufferSize:    -1,
 		MaxResourceBufferSize: -1,
@@ -123,6 +124,7 @@ func (d *Debugger) SetupRequestInterception(params *gcdapi.NetworkSetRequestInte
 		} else {
 			d.Target.Network.ContinueInterceptedRequest(iid, reason, "", "", "", "", nil, nil)
 		}
+		//d.TestRuntime()
 	})
 }
 
@@ -183,7 +185,79 @@ func (d *Debugger) processBody(data modules.WebData) (string, error) {
 			return "", err
 		}
 	}
+	//d.TestRuntime()
 	return result.Body, nil
+}
+
+func (d *Debugger) SetupPageTest(){
+	p := &gcdapi.PageAddScriptToEvaluateOnNewDocumentParams{
+		Source: `
+   function allServices(mod, r) {
+      var inj = angular.element(document).injector().get;
+      if (!r) r = {};
+      angular.forEach(angular.module(mod).requires, function(m) {allServices(m,r)});
+      angular.forEach(angular.module(mod)._invokeQueue, function(a) {
+        try { r[a[2][0]] = inj(a[2][0]); } catch (e) {}
+      });
+      return r;
+    };
+				`,
+	}
+	d.Target.Page.AddScriptToEvaluateOnNewDocumentWithParams(p)
+}
+
+func (d *Debugger) TestRuntime(){
+	d.Target.Subscribe("Runtime.executionContextCreated", func(target *gcd.ChromeTarget, v []byte){
+		fmt.Println("Fired!")
+		spe := &gcdapi.RuntimeExecutionContextCreatedEvent{}
+		err := json.Unmarshal(v, spe)
+		if err != nil {
+			log.Fatalf("error unmarshalling event data: %v\n", err)
+		}
+		fmt.Print("item -> ")
+		fmt.Println(spe.Params.Context.Id)
+
+		compileScriptParams :=  &gcdapi.RuntimeCompileScriptParams{
+			Expression : "function awesomeTest(){console.log(ng.coreTokens);}",
+			SourceURL : "https://news.ycombinator.com/evil.js",
+			PersistScript : true,
+			ExecutionContextId: spe.Params.Context.Id,
+		}
+		sid, dets, err := d.Target.Runtime.CompileScriptWithParams(compileScriptParams)
+		if err != nil || dets != nil{
+			log.Println("ERROR COMPILING SCRIPT")
+			log.Println(err.Error())
+		} else {
+			log.Println("COMPILED: " + sid)
+		}
+
+		runScriptParams := &gcdapi.RuntimeRunScriptParams{
+			ScriptId: sid,
+			ExecutionContextId: spe.Params.Context.Id,
+		}
+		_,_,_ = d.Target.Runtime.RunScriptWithParams(runScriptParams)
+	})
+	//compileScriptParams :=  &gcdapi.RuntimeCompileScriptParams{
+	//	Expression : `function awesomeTest(){
+	//						console.log(ng.coreTokens);
+	//						console.log('works');
+	//				}`,
+	//	SourceURL : "https://news.ycombinator.com/evil.js",
+	//	PersistScript : true,
+	//}
+	//sid, dets, err := d.Target.Runtime.CompileScriptWithParams(compileScriptParams)
+	//if err != nil || dets != nil{
+	//	log.Println("ERROR COMPILING SCRIPT")
+	//	log.Println(err.Error())
+	//} else {
+	//	log.Println("COMPILED: " + sid)
+	//}
+	//
+	//runScriptParams := &gcdapi.RuntimeRunScriptParams{
+	//	ScriptId: sid,
+	//	//ExecutionContextId: spe.Params.Context.Id,
+	//}
+	//_,_,_ = d.Target.Runtime.RunScriptWithParams(runScriptParams)
 }
 
 // Potentially, this could call inspectors

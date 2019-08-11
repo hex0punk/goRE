@@ -146,7 +146,9 @@ func RunGorp(s *State) {
 	interceptParams := &gcdapi.NetworkSetRequestInterceptionParams{Patterns: patterns}
 
 	s.Debugger.SetupRequestInterception(interceptParams)
-	s.Debugger.SetupChromeDebuggerEvents()
+	//s.Debugger.SetupChromeDebuggerEvents()
+	//s.Debugger.TestRuntime()
+	s.Debugger.SetupPageTest()
 
 	if shouldWait {
 		log.Println("[+] Waiting for events...")
