@@ -109,7 +109,7 @@ func RunGorp(s *State) {
 		EnableConsole: true,
 	}
 
-	// TODO: This should be abstracted in the debugger struct
+	// TODO: This should be abstracted out in the debugger struct
 	s.Debugger.ChromeProxy = startGcd()
 	defer s.Debugger.ChromeProxy.ExitProcess()
 
@@ -118,7 +118,6 @@ func RunGorp(s *State) {
 	s.Debugger.Done = make(chan bool)
 	shouldWait := true
 
-	patterns := make([]*gcdapi.NetworkRequestPattern, 4)
 	//Default is everything!
 	docPattern := "*"
 	jsPattern := "*"
@@ -128,34 +127,53 @@ func RunGorp(s *State) {
 		jsPattern = "*" + config.Scope + "*.js"
 		xhrPattern = "*" + config.Scope + "/*"
 	}
-	patterns[0] = &gcdapi.NetworkRequestPattern{
-		UrlPattern:        docPattern,
-		ResourceType:      "Document",
-		InterceptionStage: "HeadersReceived",
+	patterns := []*gcdapi.NetworkRequestPattern{
+		{
+			UrlPattern:        docPattern,
+			ResourceType:      "Document",
+			InterceptionStage: "HeadersReceived",
+		},
+		{
+			UrlPattern:        jsPattern,
+			ResourceType:      "Script",
+			InterceptionStage: "HeadersReceived",
+		},
+		{
+			UrlPattern:        xhrPattern,
+			ResourceType:      "XHR",
+			InterceptionStage: "HeadersReceived",
+		},
+		{
+			UrlPattern:        "*" + config.Scope + "*.swf",
+			ResourceType:      "Other",
+			InterceptionStage: "HeadersReceived",
+		},
 	}
-	patterns[1] = &gcdapi.NetworkRequestPattern{
-		UrlPattern:        jsPattern,
-		ResourceType:      "Script",
-		InterceptionStage: "HeadersReceived",
-	}
-	patterns[2] = &gcdapi.NetworkRequestPattern{
-		UrlPattern:        xhrPattern,
-		ResourceType:      "XHR",
-		InterceptionStage: "HeadersReceived",
-	}
-	patterns[3] = &gcdapi.NetworkRequestPattern{
-		UrlPattern:        "*" + config.Scope + "*.swf",
-		ResourceType:      "Other",
-		InterceptionStage: "HeadersReceived",
-	}
+
 	interceptParams := &gcdapi.NetworkSetRequestInterceptionParams{Patterns: patterns}
 
 	s.Debugger.SetupRequestInterception(interceptParams)
 
+	//Now setup script injector
+	if config.ScriptsPath != ""{
+		scripts, err := GetUserScripts()
+		if err != nil{
+			log.Println("[-] Error setting up script injector")
+		}
+		s.Debugger.SetupScriptInjector(scripts)
+	}
 	if shouldWait {
 		log.Println("[+] Waiting for events...")
 		<-s.Debugger.Done
 	}
+}
+
+func GetUserScripts() (string, error) {
+	b, err := ioutil.ReadFile(config.ScriptsPath) // just pass the file name
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
 }
 
 // Gets and prints the information for any given module
