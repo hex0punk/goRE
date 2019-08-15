@@ -127,6 +127,16 @@ func (d *Debugger) SetupRequestInterception(params *gcdapi.NetworkSetRequestInte
 	})
 }
 
+func (d *Debugger) SetupScriptInjector(scripts string){
+	p := &gcdapi.PageAddScriptToEvaluateOnNewDocumentParams{
+		Source: scripts,
+	}
+	_, err := d.Target.Page.AddScriptToEvaluateOnNewDocumentWithParams(p)
+	if err != nil{
+		log.Println("[-] Unable to setup script injector")
+	}
+}
+
 // CallProcessors alters the body of web responses using the selected processors
 func (d *Debugger) CallProcessors(data modules.WebData) (string, error) {
 	alteredBody, err := d.processBody(data)
