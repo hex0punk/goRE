@@ -2,7 +2,8 @@ var injector,
     getSelectedComponent,
     applyChanges,
     getService,
-    getAllServices;
+    getAllServices,
+    getAllServices2;
 
 
 function gorp() {
@@ -38,6 +39,15 @@ function setupAngularScripts(){
     };
     applyChanges = function () {
         angular.element(document.body).scope().$apply();
+    };
+    getAllServices2 = function (mod, r) {
+        var inj = angular.element(document).injector().get;
+        if (!r) r = {};
+        angular.forEach(angular.module(mod).requires, function(m) {getAllServices2(m,r)});
+        angular.forEach(angular.module(mod)._invokeQueue, function(a) {
+            try { r[a[2][0]] = inj(a[2][0]); } catch (e) {}
+        });
+        return r;
     };
     getAllServices = function(mod, r) {
         var inj;
