@@ -1,6 +1,12 @@
 scope: "office.com"
 verbose: False
+scriptsPath: "./data/scripts/ng-helpers.js"
 flags: ["-na", "--disable-gpu", "--window-size=1200,800", "--auto-open-devtools-for-tabs","--disable-popup-blocking"]
+xhrBreakPoints:
+  - "/v1/logs"
+  - "/v1/accounts"
+  - "/v1/sessions"
+  - "/v1/api_keys"
 modules:
   processors:
     - path: "/data/modules/processors/angular/prodModeHijacker/"
