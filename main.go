@@ -108,6 +108,7 @@ func RunGorp(s *State) {
 		Verbose:       config.Verbose,
 		EnableConsole: true,
 	}
+	s.Debugger.XHRBreakPoints = config.XHRBreakPoints
 
 	// TODO: This should be abstracted out in the debugger struct
 	s.Debugger.ChromeProxy = startGcd()
@@ -153,7 +154,7 @@ func RunGorp(s *State) {
 	interceptParams := &gcdapi.NetworkSetRequestInterceptionParams{Patterns: patterns}
 
 	s.Debugger.SetupRequestInterception(interceptParams)
-
+	s.Debugger.SetupDOMDebugger()
 	//Now setup script injector
 	if config.ScriptsPath != ""{
 		scripts, err := GetUserScripts()

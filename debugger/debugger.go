@@ -17,11 +17,12 @@ import (
 // Debugger holds the configuration for the Chrome Dev Protocol hooks. It also
 // contains modules to be used as requests and responses are intercepted.
 type Debugger struct {
-	ChromeProxy *gcd.Gcd
-	Done        chan bool
-	Options     Options
-	Target      *gcd.ChromeTarget
-	Modules     modules.Modules
+	ChromeProxy 	*gcd.Gcd
+	Done        	chan bool
+	Options     	Options
+	Target      	*gcd.ChromeTarget
+	Modules     	modules.Modules
+	XHRBreakPoints  []string
 }
 
 // Options defines the options used with the debugger, which is responsible for using the Chrome Dev Tools
@@ -125,6 +126,19 @@ func (d *Debugger) SetupRequestInterception(params *gcdapi.NetworkSetRequestInte
 			d.Target.Network.ContinueInterceptedRequest(iid, reason, "", "", "", "", nil, nil)
 		}
 	})
+}
+
+func (d *Debugger) SetupDOMDebugger(){
+	for _, bp := range d.XHRBreakPoints{
+		b := &gcdapi.DOMDebuggerSetXHRBreakpointParams{
+			Url: bp,
+		}
+
+		_, err := d.Target.DOMDebugger.SetXHRBreakpointWithParams(b)
+		if err != nil{
+			log.Println("[-] Unable to setup DOM Debugger")
+		}
+	}
 }
 
 func (d *Debugger) SetupScriptInjector(scripts string){
