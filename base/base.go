@@ -4,10 +4,12 @@ package base
 // Configuration holds the configuration of gorp and it is used
 // when parsing the yaml config file
 type Configuration struct {
-	Scope   string
-	Flags   []string
-	Modules ModulesList
-	Verbose bool
+	Scope       	string
+	ScriptsPath 	string
+	Flags       	[]string
+	XHRBreakPoints  []string
+	Modules     	ModulesList
+	Verbose     	bool
 }
 
 // ModuleConfig holds the path and options for gorp modules
