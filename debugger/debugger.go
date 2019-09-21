@@ -44,7 +44,7 @@ func (d *Debugger) StartTarget() {
 	target.DOM.Enable()
 	target.Console.Enable()
 	target.Page.Enable()
-	target.Debugger.Enable()
+	target.Debugger.Enable(10000) //TODO: move option to config yaml file
 	networkParams := &gcdapi.NetworkEnableParams{
 		MaxTotalBufferSize:    -1,
 		MaxResourceBufferSize: -1,
