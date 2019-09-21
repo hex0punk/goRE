@@ -161,7 +161,28 @@ The power of gorp is in the plugins. Creating your own plugin is simple.
     go build -buildmode=plugin -o gorpmod.so gorpmod.go
     ```
  6. Now you are ready to use your plugin with gorp. 
+ 
+## Addtional Debugging Options
 
+### Injecting Custom Debugger Code
+
+Gorp now allows you to inject code used for automating debugging tasks from the console. To do so do the following:
+
+1) Create a JS files where you will enter your custom code.
+2) Add any logic/code you want to your file. 
+3) You will need to add any intialization logic inside a function call `gorp()`. Gorp will call `gopr()` on page loads.
+4) Add the following to your `config.yaml` file: `scriptsPath: "./path/to/scripts.js"`
+5) Lunch gorp and make use of your functions from the cosole.
+
+### XHR Based Breakpoints
+
+You can now also setup breakpoints based on XHR logic. Let's say you want to pause execution and examine variables when a calls to `/v1/accounts` and `/v1/api_keys` are made by the front end. Simple add the following to your config file to do so:
+
+```yaml
+xhrBreakPoints:
+  - "/v1/accounts"
+  - "/v1/api_keys"
+```
 
 ## Immediate Needs
 - I have not found a JS beautifies and deobfuscation go library yet. Worst-case scenario, I could either write one (kinda of a project of its own) or use node libraries via system calls.
@@ -172,5 +193,3 @@ The power of gorp is in the plugins. Creating your own plugin is simple.
  - Rad CLI colors and functions for fancy cli printing
  - Create more plugins for tasks such as:
      - Keep track of values such as user GUIDs and show alarms when certain conditions occur while you explore an application (helpful for finding IDORs).
-     - Perform framework specific analysis of an application as it is explored. For instance, the tool could list all Angular services or all API endpoints as it analyses scripts used by the application.
-     - Other rad stuff.
