@@ -142,6 +142,9 @@ func (d *Debugger) SetupDOMDebugger(){
 }
 
 func (d *Debugger) SetupScriptInjector(scripts string){
+	// Append init function.
+	// TODO: Yes, I should make it a const, at least
+	scripts = "setTimeout(function() { gorp(); }, 2000);\n" + scripts
 	p := &gcdapi.PageAddScriptToEvaluateOnNewDocumentParams{
 		Source: scripts,
 	}
@@ -179,13 +182,8 @@ func (d *Debugger) CallProcessors(data modules.WebData) (string, error) {
 
 // CallInspectors executes inspectors in a gorp session
 func (d *Debugger) CallInspectors(webData modules.WebData) {
-	//TODO: abstract this as a debugger function
 	for _, v := range d.Modules.Inspectors {
-		//TODO call all inspectors as goroutines
-		err := v.Inspect(webData)
-		if err != nil {
-			log.Println("[+] Inspector error: " + v.Registry.Name)
-		}
+		go v.Inspect(webData)
 	}
 }
 

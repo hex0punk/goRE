@@ -5,6 +5,7 @@ var injector,
     getAllServices,
     getAllServices2;
 
+var inj;
 
 function gorp() {
     if (typeof ng !== "undefined"){
@@ -50,10 +51,12 @@ function setupAngularScripts(){
         return r;
     };
     getAllServices = function(mod, r) {
-        var inj;
         if (!r) {
             r = {};
-            inj = angular.element(document.querySelector('[ng-app]')).injector().get;
+            if (document.querySelector('[ng-app]'))
+                inj = angular.element(document.querySelector('[ng-app]')).injector().get;
+            if (document.querySelector('[data-ng-app]'))
+                inj = angular.element(document.querySelector('[data-ng-app]')).injector().get;
         }
         angular.forEach(angular.module(mod).requires, function(m) {getAllServices(m,r)});
         angular.forEach(angular.module(mod)._invokeQueue, function(a) {
