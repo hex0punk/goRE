@@ -156,12 +156,16 @@ func RunGorp(s *State) {
 	s.Debugger.SetupRequestInterception(interceptParams)
 	s.Debugger.SetupDOMDebugger()
 	//Now setup script injector
-	if config.ScriptsPath != ""{
+	if config.Script != nil{
 		scripts, err := GetUserScripts()
 		if err != nil{
 			log.Println("[-] Error setting up script injector")
 		}
-		s.Debugger.SetupScriptInjector(scripts)
+		if config.Script.Source == ""{
+			s.Debugger.InjectScriptAsPageObject(&scripts)
+		} else {
+			s.Debugger.InjectScriptAsRuntime(&scripts, &config.Script.Source)
+		}
 	}
 	if shouldWait {
 		log.Println("[+] Waiting for events...")
@@ -170,11 +174,14 @@ func RunGorp(s *State) {
 }
 
 func GetUserScripts() (string, error) {
-	b, err := ioutil.ReadFile(config.ScriptsPath) // just pass the file name
+	s, err := ioutil.ReadFile(config.Script.Path) // just pass the file name
 	if err != nil {
 		return "", err
 	}
-	return string(b), nil
+	// Append init function.
+	// TODO: Yes, I should make it a const, at least
+	scripts := "setTimeout(function() { gorp(); }, 2000);\n" + string(s)
+	return scripts , nil
 }
 
 // Gets and prints the information for any given module

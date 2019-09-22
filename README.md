@@ -171,7 +171,11 @@ Gorp now allows you to inject code used for automating debugging tasks from the 
 1) Create a JS files where you will enter your custom code.
 2) Add any logic/code you want to your file. 
 3) You will need to add any intialization logic inside a function call `gorp()`. Gorp will call `gopr()` on page loads.
-4) Add the following to your `config.yaml` file: `scriptsPath: "./path/to/scripts.js"`
+4) Add the following to your `config.yml` file:
+    ```
+    script:
+      path: "/path/to/scripts.js"
+    ```
 5) Lunch gorp and make use of your functions from the cosole.
 
 ### XHR Based Breakpoints

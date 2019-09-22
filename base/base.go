@@ -5,11 +5,16 @@ package base
 // when parsing the yaml config file
 type Configuration struct {
 	Scope       	string
-	ScriptsPath 	string
+	Script	 		*Script
 	Flags       	[]string
 	XHRBreakPoints  []string
 	Modules     	ModulesList
 	Verbose     	bool
+}
+
+type Script struct {
+	Path   string
+	Source string
 }
 
 // ModuleConfig holds the path and options for gorp modules

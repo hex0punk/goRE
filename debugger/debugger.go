@@ -44,6 +44,7 @@ func (d *Debugger) StartTarget() {
 	target.DOM.Enable()
 	target.Console.Enable()
 	target.Page.Enable()
+	target.Runtime.Enable()
 	target.Debugger.Enable(10000) //TODO: move option to config yaml file
 	networkParams := &gcdapi.NetworkEnableParams{
 		MaxTotalBufferSize:    -1,
@@ -141,12 +142,22 @@ func (d *Debugger) SetupDOMDebugger(){
 	}
 }
 
-func (d *Debugger) SetupScriptInjector(scripts string){
-	// Append init function.
-	// TODO: Yes, I should make it a const, at least
-	scripts = "setTimeout(function() { gorp(); }, 2000);\n" + scripts
+
+func (d *Debugger) InjectScriptAsRuntime(scripts *string, source *string){
+	r := &gcdapi.RuntimeCompileScriptParams{
+		Expression: *scripts,
+		SourceURL: *source,
+		PersistScript: true,
+	}
+	_,_, err := d.Target.Runtime.CompileScriptWithParams(r)
+	if err != nil{
+		log.Println("[-] Unable to setup script injector")
+	}
+}
+
+func (d *Debugger) InjectScriptAsPageObject(scripts *string){
 	p := &gcdapi.PageAddScriptToEvaluateOnNewDocumentParams{
-		Source: scripts,
+		Source: *scripts,
 	}
 	_, err := d.Target.Page.AddScriptToEvaluateOnNewDocumentWithParams(p)
 	if err != nil{
