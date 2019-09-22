@@ -14,6 +14,12 @@ import (
 	"time"
 )
 
+var(
+	runtimeScriptParams *gcdapi.RuntimeCompileScriptParams
+)
+
+
+
 // Debugger holds the configuration for the Chrome Dev Protocol hooks. It also
 // contains modules to be used as requests and responses are intercepted.
 type Debugger struct {
@@ -126,6 +132,9 @@ func (d *Debugger) SetupRequestInterception(params *gcdapi.NetworkSetRequestInte
 		} else {
 			d.Target.Network.ContinueInterceptedRequest(iid, reason, "", "", "", "", nil, nil)
 		}
+		if runtimeScriptParams != nil{
+			d.InjectScriptAsRuntime(nil, nil)
+		}
 	})
 }
 
@@ -144,12 +153,15 @@ func (d *Debugger) SetupDOMDebugger(){
 
 
 func (d *Debugger) InjectScriptAsRuntime(scripts *string, source *string){
-	r := &gcdapi.RuntimeCompileScriptParams{
-		Expression: *scripts,
-		SourceURL: *source,
-		PersistScript: true,
+	if runtimeScriptParams == nil{
+		r := &gcdapi.RuntimeCompileScriptParams{
+			Expression: *scripts,
+			SourceURL: *source,
+			PersistScript: true,
+		}
+		runtimeScriptParams = r
 	}
-	_,_, err := d.Target.Runtime.CompileScriptWithParams(r)
+	_,_, err := d.Target.Runtime.CompileScriptWithParams(runtimeScriptParams)
 	if err != nil{
 		log.Println("[-] Unable to setup script injector")
 	}
