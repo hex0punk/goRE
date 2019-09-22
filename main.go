@@ -7,6 +7,7 @@ import (
 	"github.com/DharmaOfCode/gorp/debugger"
 	"github.com/DharmaOfCode/gorp/modules"
 	"github.com/DharmaOfCode/gorp/server"
+	"github.com/go-redis/redis"
 	"github.com/spf13/viper"
 	"github.com/wirepair/gcd"
 	"github.com/wirepair/gcd/gcdapi"
@@ -16,6 +17,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 // State identifies the state of a gorp session.
@@ -215,8 +217,48 @@ func GetModInfo(s *State) {
 	fmt.Println(s.ModPath)
 }
 
+
+func setupRedis(){
+	client := redis.NewClient(&redis.Options{
+		Addr:     "localhost:6379",
+		Password: "", // no password set
+		DB:       0,  // use default DB
+	})
+
+	pong, err := client.Ping().Result()
+	log.Println(pong, err)
+
+	pubsub := client.Subscribe("mychannel1")
+
+	// Wait for confirmation that subscription is created before publishing anything.
+	_, err = pubsub.Receive()
+	if err != nil {
+		panic(err)
+	}
+
+	// Go channel which receives messages.
+	ch := pubsub.Channel()
+
+	// Publish a message.
+	err = client.Publish("mychannel1", "hello").Err()
+	if err != nil {
+		panic(err)
+	}
+
+	time.AfterFunc(time.Second, func() {
+		// When pubsub is closed channel is closed too.
+		_ = pubsub.Close()
+	})
+
+	// Consume messages.
+	for msg := range ch {
+		fmt.Println(msg.Channel, msg.Payload)
+	}
+}
+
 func main() {
 	s := ParseCmdLine()
+	setupRedis()
 	if s.EnableUI{
 		log.Println("[+] Setting up wasm server")
 		go server.Serve()
