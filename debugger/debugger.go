@@ -23,6 +23,8 @@ type Debugger struct {
 	Target      	*gcd.ChromeTarget
 	Modules     	modules.Modules
 	XHRBreakPoints  []string
+
+	MessageChan     chan string
 }
 
 // Options defines the options used with the debugger, which is responsible for using the Chrome Dev Tools
@@ -218,4 +220,14 @@ func (d *Debugger) processBody(data modules.WebData) (string, error) {
 		}
 	}
 	return result.Body, nil
+}
+
+func (d *Debugger) log(l string, err error){
+	//TODO: we should process a message Struct, with message + error
+	d.MessageChan <- l
+	if err != nil{
+		log.Println(l, err)
+	} else {
+		log.Println(l)
+	}
 }
