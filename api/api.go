@@ -17,6 +17,7 @@ type JsFunction struct {
 	Expression bool
 }
 
+
 // GetJSFunctionWithHint finds a function in a js file using a hint to locate it.
 // It returns a pointer to a jsFunction object and an error
 func GetJsFunctionWithHint(body string, hint string) (*JsFunction, error) {

@@ -9,6 +9,7 @@ import (
 	"github.com/wirepair/gcd"
 	"github.com/wirepair/gcd/gcdapi"
 	"log"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -33,6 +34,7 @@ type Options struct {
 	EnableConsole bool
 	Verbose       bool
 	Scope         string
+	LogFile		  string
 }
 
 // StartTarget initializes  Chrome and sets up the Chrome Dev Tools protocol targets so that events can be intercepted
@@ -80,12 +82,12 @@ func (d *Debugger) SetupRequestInterception(params *gcdapi.NetworkSetRequestInte
 		method := msg.Params.Request.Method
 
 		if msg.Params.IsNavigationRequest {
-			log.Print("\n\n\n\n")
-			log.Println("[?] Navigation REQUEST")
+			d.log("\n\n\n\n", nil)
+			d.log("[?] Navigation REQUEST", nil)
 		}
-		log.Println("[+] Request intercepted for", url)
+		d.log("[+] Request intercepted for " + url, nil)
 		if reason != "" {
-			log.Println("[-] Abort with reason", reason)
+			d.log("[-] Abort with reason " + reason, nil)
 		}
 
 		if iid != "" {
@@ -200,6 +202,12 @@ func (d *Debugger) CallInspectors(webData modules.WebData) {
 	}
 }
 
+func (d *Debugger) SetupFileLogger(){
+	d.MessageChan = make(chan string)
+
+	go d.fileLogger()
+}
+
 func decodeBase64Response(res string) (string, error) {
 	l, err := base64.StdEncoding.DecodeString(res)
 	if err != nil {
@@ -222,12 +230,26 @@ func (d *Debugger) processBody(data modules.WebData) (string, error) {
 	return result.Body, nil
 }
 
+func (d *Debugger) fileLogger(){
+	file, err := os.OpenFile(d.Options.LogFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		panic(err)
+	}
+
+	for l := range d.MessageChan{
+		if _, err := file.WriteString(l); err != nil {
+			panic(err)
+		}
+	}
+}
+
 func (d *Debugger) log(l string, err error){
 	//TODO: we should process a message Struct, with message + error
-	d.MessageChan <- l
+	d.MessageChan <- l + "\n"
 	if err != nil{
 		log.Println(l, err)
 	} else {
 		log.Println(l)
 	}
+
 }
