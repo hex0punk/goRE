@@ -6,7 +6,6 @@ import (
 	"github.com/DharmaOfCode/gorp/base"
 	"github.com/DharmaOfCode/gorp/debugger"
 	"github.com/DharmaOfCode/gorp/modules"
-	"github.com/DharmaOfCode/gorp/server"
 	"github.com/spf13/viper"
 	"github.com/wirepair/gcd"
 	"github.com/wirepair/gcd/gcdapi"
@@ -26,7 +25,6 @@ type State struct {
 	Run              bool              // Whether to run a session
 	GetInfo          bool              // Get module information
 	RecompileModules bool
-	EnableUI		 bool
 }
 
 var (
@@ -56,8 +54,6 @@ func ParseCmdLine() *State {
 	flag.BoolVar(&s.Run, "r", true, "run gorp")
 	flag.BoolVar(&s.GetInfo, "i", false, "run gorp")
 	flag.BoolVar(&s.RecompileModules, "p", false, "recompile all plugins")
-
-	flag.BoolVar(&s.EnableUI, "u", false, "Run wasm based UI (Experimental")
 
 	flag.Parse()
 	return &s
@@ -226,10 +222,6 @@ func GetModInfo(s *State) {
 
 func main() {
 	s := ParseCmdLine()
-	if s.EnableUI{
-		log.Println("[+] Setting up wasm server")
-		go server.Serve()
-	}
 	if s.GetInfo {
 		GetModInfo(s)
 	} else if s.RecompileModules {

@@ -23,6 +23,7 @@ function setupAngular2Scripts(){
     getSelectedComponent = function (){
         if ($0 != null){
             var state = ng.probe($0);
+            debugger;
             return state.componentInstance;
         }
         console.log("Select TEST the root element from the inspector");
