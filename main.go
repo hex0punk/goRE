@@ -165,15 +165,17 @@ func RunGorp(s *State) {
 	s.Debugger.SetupDOMDebugger()
 	//Now setup script injector
 	if config.Script != nil{
-		scripts, err := GetUserScripts()
+		//scripts, err := GetUserScripts()
 		if err != nil{
 			log.Println("[-] Error setting up script injector")
 		}
-		if config.Script.Source == ""{
-			s.Debugger.InjectScriptAsPageObject(&scripts)
-		} else {
-			s.Debugger.InjectScriptAsRuntime(&scripts, &config.Script.Source)
-		}
+
+		s.Debugger.UpdateScriptsOnLoad(config.Script.Path)
+		//if config.Script.Source == ""{
+		//	s.Debugger.InjectScriptAsPageObject(&scripts)
+		//} else {
+		//	s.Debugger.InjectScriptAsRuntime(&scripts, &config.Script.Source)
+		//}
 	}
 	if shouldWait {
 		log.Println("[+] Waiting for events...")

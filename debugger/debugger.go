@@ -6,8 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/DharmaOfCode/gorp/modules"
+	"github.com/fsnotify/fsnotify"
 	"github.com/wirepair/gcd"
 	"github.com/wirepair/gcd/gcdapi"
+	"io/ioutil"
 	"log"
 	"os"
 	"strconv"
@@ -167,6 +169,79 @@ func (d *Debugger) InjectScriptAsPageObject(scripts *string){
 	if err != nil{
 		log.Println("[-] Unable to setup script injector")
 	}
+}
+
+func GetUserScripts(path string) (string, error) {
+	s, err := ioutil.ReadFile(path) // just pass the file name
+	if err != nil {
+		return "", err
+	}
+	// Append init function.
+	// TODO: Yes, I should make it a const, at least
+	scripts := "setTimeout(function() { gorp(); }, 2000);\n" + string(s)
+	return scripts , nil
+}
+
+func (d *Debugger) UpdateScriptsOnLoad(path string){
+	//Initial load
+	scripts, err := GetUserScripts(path)
+	if err != nil{
+		panic(err)
+	}
+
+	sid := ""
+
+	p := &gcdapi.PageAddScriptToEvaluateOnNewDocumentParams{
+		Source: scripts,
+	}
+	sid, err = d.Target.Page.AddScriptToEvaluateOnNewDocumentWithParams(p)
+	if err != nil{
+		log.Println("[-] Unable to setup script injector")
+	}
+
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		fmt.Println("ERROR", err)
+	}
+	defer watcher.Close()
+
+	done := make(chan bool)
+
+	go func() {
+		for {
+			select {
+			// watch for events
+			case event := <-watcher.Events:
+				if event.Op == 0x2{
+
+				}
+				fmt.Printf("EVENT! %#v\n", event)
+				d.Target.Page.RemoveScriptToEvaluateOnNewDocument(sid)
+				scripts, err = GetUserScripts(path)
+				if err != nil{
+					panic(err)
+				}	
+
+				p = &gcdapi.PageAddScriptToEvaluateOnNewDocumentParams{
+					Source: scripts,
+				}
+				sid, err = d.Target.Page.AddScriptToEvaluateOnNewDocumentWithParams(p)
+				if err != nil{
+					log.Println("[-] Unable to setup script injector")
+				}
+				// watch for errors
+			case err := <-watcher.Errors:
+				fmt.Println("ERROR", err)
+			}
+		}
+	}()
+
+	// out of the box fsnotify can watch a single file, or a single directory
+	if err := watcher.Add(path); err != nil {
+		fmt.Println("ERROR", err)
+	}
+
+	<-done
 }
 
 // CallProcessors alters the body of web responses using the selected processors
