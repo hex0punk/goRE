@@ -220,7 +220,7 @@ func (d *Debugger) UpdateScriptsOnLoad(path string){
 				scripts, err = GetUserScripts(path)
 				if err != nil{
 					panic(err)
-				}	
+				}
 
 				p = &gcdapi.PageAddScriptToEvaluateOnNewDocumentParams{
 					Source: scripts,
