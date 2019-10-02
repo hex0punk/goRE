@@ -14,6 +14,6 @@ modules:
     - path: "/data/modules/processors/angular/prodModeHijacker/"
       options: {}
   inspectors:
-    - path: "/data/modules/inspectors/generic/apifinders/"
+    - path: "/data/modules/inspectors/generic/apifinder/"
       options:
         FilePath: "./logs/apifinds.txt"

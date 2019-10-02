@@ -222,7 +222,7 @@ func (d *Debugger) UpdateScriptsOnLoad(path string){
 		}
 	}()
 
-	// out of the box fsnotify can watch a single file, or a single directory
+
 	if err := watcher.Add(path); err != nil {
 		fmt.Println("ERROR", err)
 	}
