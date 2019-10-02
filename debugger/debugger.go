@@ -149,26 +149,16 @@ func (d *Debugger) SetupDOMDebugger(){
 }
 
 
-func (d *Debugger) InjectScriptAsRuntime(scripts *string, source *string){
-	r := &gcdapi.RuntimeCompileScriptParams{
-		Expression: *scripts,
-		SourceURL: *source,
-		PersistScript: true,
-	}
-	_,_, err := d.Target.Runtime.CompileScriptWithParams(r)
-	if err != nil{
-		log.Println("[-] Unable to setup script injector")
-	}
-}
-
-func (d *Debugger) InjectScriptAsPageObject(scripts *string){
+func (d *Debugger) InjectScriptAsPageObject(scripts *string) string{
 	p := &gcdapi.PageAddScriptToEvaluateOnNewDocumentParams{
 		Source: *scripts,
 	}
-	_, err := d.Target.Page.AddScriptToEvaluateOnNewDocumentWithParams(p)
+	sid, err := d.Target.Page.AddScriptToEvaluateOnNewDocumentWithParams(p)
 	if err != nil{
 		log.Println("[-] Unable to setup script injector")
 	}
+
+	return sid
 }
 
 func GetUserScripts(path string) (string, error) {
@@ -189,12 +179,8 @@ func (d *Debugger) UpdateScriptsOnLoad(path string){
 		panic(err)
 	}
 
-	sid := ""
+	sid := d.InjectScriptAsPageObject(&scripts)
 
-	p := &gcdapi.PageAddScriptToEvaluateOnNewDocumentParams{
-		Source: scripts,
-	}
-	sid, err = d.Target.Page.AddScriptToEvaluateOnNewDocumentWithParams(p)
 	if err != nil{
 		log.Println("[-] Unable to setup script injector")
 	}
@@ -213,21 +199,14 @@ func (d *Debugger) UpdateScriptsOnLoad(path string){
 			// watch for events
 			case event := <-watcher.Events:
 				if event.Op == 0x2{
+					fmt.Printf("EVENT! %#v\n", event)
+					d.Target.Page.RemoveScriptToEvaluateOnNewDocument(sid)
+					scripts, err = GetUserScripts(path)
+					if err != nil{
+						panic(err)
+					}
 
-				}
-				fmt.Printf("EVENT! %#v\n", event)
-				d.Target.Page.RemoveScriptToEvaluateOnNewDocument(sid)
-				scripts, err = GetUserScripts(path)
-				if err != nil{
-					panic(err)
-				}
-
-				p = &gcdapi.PageAddScriptToEvaluateOnNewDocumentParams{
-					Source: scripts,
-				}
-				sid, err = d.Target.Page.AddScriptToEvaluateOnNewDocumentWithParams(p)
-				if err != nil{
-					log.Println("[-] Unable to setup script injector")
+					sid = d.InjectScriptAsPageObject(&scripts)
 				}
 				// watch for errors
 			case err := <-watcher.Errors:
