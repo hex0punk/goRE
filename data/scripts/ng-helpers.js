@@ -25,7 +25,7 @@ function setupAngular2Scripts(){
             var state = ng.probe($0);
             return state.componentInstance;
         }
-        console.log("Select the root element from the inspector");
+        console.log("Select TEST the root element from the inspector");
     };
     applyChanges = function(){
         ng.probe($0).injector.get(ng.coreTokens.ApplicationRef).tick();

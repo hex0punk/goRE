@@ -6,9 +6,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/DharmaOfCode/gorp/modules"
+	"github.com/fsnotify/fsnotify"
 	"github.com/wirepair/gcd"
 	"github.com/wirepair/gcd/gcdapi"
+	"io/ioutil"
 	"log"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -29,6 +32,8 @@ type Debugger struct {
 	Target      	*gcd.ChromeTarget
 	Modules     	modules.Modules
 	XHRBreakPoints  []string
+
+	MessageChan     chan string
 }
 
 // Options defines the options used with the debugger, which is responsible for using the Chrome Dev Tools
@@ -37,6 +42,7 @@ type Options struct {
 	EnableConsole bool
 	Verbose       bool
 	Scope         string
+	LogFile		  string
 }
 
 // StartTarget initializes  Chrome and sets up the Chrome Dev Tools protocol targets so that events can be intercepted
@@ -84,12 +90,12 @@ func (d *Debugger) SetupRequestInterception(params *gcdapi.NetworkSetRequestInte
 		method := msg.Params.Request.Method
 
 		if msg.Params.IsNavigationRequest {
-			log.Print("\n\n\n\n")
-			log.Println("[?] Navigation REQUEST")
+			d.log("\n\n\n\n", nil)
+			d.log("[?] Navigation REQUEST", nil)
 		}
-		log.Println("[+] Request intercepted for", url)
+		d.log("[+] Request intercepted for " + url, nil)
 		if reason != "" {
-			log.Println("[-] Abort with reason", reason)
+			d.log("[-] Abort with reason " + reason, nil)
 		}
 
 		if iid != "" {
@@ -132,9 +138,6 @@ func (d *Debugger) SetupRequestInterception(params *gcdapi.NetworkSetRequestInte
 		} else {
 			d.Target.Network.ContinueInterceptedRequest(iid, reason, "", "", "", "", nil, nil)
 		}
-		if runtimeScriptParams != nil{
-			d.InjectScriptAsRuntime(nil, nil)
-		}
 	})
 }
 
@@ -152,29 +155,79 @@ func (d *Debugger) SetupDOMDebugger(){
 }
 
 
-func (d *Debugger) InjectScriptAsRuntime(scripts *string, source *string){
-	if runtimeScriptParams == nil{
-		r := &gcdapi.RuntimeCompileScriptParams{
-			Expression: *scripts,
-			SourceURL: *source,
-			PersistScript: true,
-		}
-		runtimeScriptParams = r
-	}
-	_,_, err := d.Target.Runtime.CompileScriptWithParams(runtimeScriptParams)
-	if err != nil{
-		log.Println("[-] Unable to setup script injector")
-	}
-}
-
-func (d *Debugger) InjectScriptAsPageObject(scripts *string){
+func (d *Debugger) InjectScriptAsPageObject(scripts *string) string{
 	p := &gcdapi.PageAddScriptToEvaluateOnNewDocumentParams{
 		Source: *scripts,
 	}
-	_, err := d.Target.Page.AddScriptToEvaluateOnNewDocumentWithParams(p)
+	sid, err := d.Target.Page.AddScriptToEvaluateOnNewDocumentWithParams(p)
+
 	if err != nil{
 		log.Println("[-] Unable to setup script injector")
 	}
+
+	return sid
+}
+
+func GetUserScripts(path string) (string, error) {
+	s, err := ioutil.ReadFile(path) // just pass the file name
+	if err != nil {
+		return "", err
+	}
+	// Append init function.
+	// TODO: Yes, I should make it a const, at least
+	scripts := "setTimeout(function() { gorp(); }, 2000);\n" + string(s)
+	return scripts , nil
+}
+
+func (d *Debugger) UpdateScriptsOnLoad(path string){
+	//Initial load
+	scripts, err := GetUserScripts(path)
+	if err != nil{
+		panic(err)
+	}
+
+	sid := d.InjectScriptAsPageObject(&scripts)
+
+	if err != nil{
+		log.Println("[-] Unable to setup script injector")
+	}
+
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		fmt.Println("ERROR", err)
+	}
+	defer watcher.Close()
+
+	done := make(chan bool)
+
+	go func() {
+		for {
+			select {
+			// watch for events
+			case event := <-watcher.Events:
+				if event.Op == 0x2{
+					fmt.Printf("EVENT! %#v\n", event)
+					d.Target.Page.RemoveScriptToEvaluateOnNewDocument(sid)
+					scripts, err = GetUserScripts(path)
+					if err != nil{
+						panic(err)
+					}
+
+					sid = d.InjectScriptAsPageObject(&scripts)
+				}
+				// watch for errors
+			case err := <-watcher.Errors:
+				fmt.Println("ERROR", err)
+			}
+		}
+	}()
+
+	// out of the box fsnotify can watch a single file, or a single directory
+	if err := watcher.Add(path); err != nil {
+		fmt.Println("ERROR", err)
+	}
+
+	<-done
 }
 
 // CallProcessors alters the body of web responses using the selected processors
@@ -210,6 +263,12 @@ func (d *Debugger) CallInspectors(webData modules.WebData) {
 	}
 }
 
+func (d *Debugger) SetupFileLogger(){
+	d.MessageChan = make(chan string)
+
+	go d.fileLogger()
+}
+
 func decodeBase64Response(res string) (string, error) {
 	l, err := base64.StdEncoding.DecodeString(res)
 	if err != nil {
@@ -230,4 +289,28 @@ func (d *Debugger) processBody(data modules.WebData) (string, error) {
 		}
 	}
 	return result.Body, nil
+}
+
+func (d *Debugger) fileLogger(){
+	file, err := os.OpenFile(d.Options.LogFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		panic(err)
+	}
+
+	for l := range d.MessageChan{
+		if _, err := file.WriteString(l); err != nil {
+			panic(err)
+		}
+	}
+}
+
+func (d *Debugger) log(l string, err error){
+	//TODO: we should process a message Struct, with message + error
+	d.MessageChan <- l + "\n"
+	if err != nil{
+		log.Println(l, err)
+	} else {
+		log.Println(l)
+	}
+
 }

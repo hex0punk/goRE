@@ -14,7 +14,7 @@ type Configuration struct {
 
 type Script struct {
 	Path   string
-	Source string
+	Watch  bool
 }
 
 // ModuleConfig holds the path and options for gorp modules
