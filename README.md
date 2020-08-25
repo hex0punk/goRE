@@ -1,44 +1,44 @@
-[![Go Report Card](https://goreportcard.com/badge/github.com/DharmaOfCode/gorp)](https://goreportcard.com/report/github.com/DharmaOfCode/gorp)
-[![Go Documentation](http://godoc.org/github.com/DharmaOfCode/gorp?status.svg)](http://godoc.org/github.com/DharmaOfCode/gorp)
+[![Go Report Card](https://goreportcard.com/badge/github.com/hex0punk/goRE)](https://goreportcard.com/report/github.com/hex0punk/goRE)
+[![Go Documentation](http://godoc.org/github.com/hex0punk/goRE?status.svg)](http://godoc.org/github.com/hex0punk/goRE)
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
-# Gorp
+# goRE
 A modular bug hunting, pentesting and webapp reverse engineering framework written in Go.
 
 _If you want to learn more about how this idea came about and how I went about writing this, you can read [this blog post](https://codedharma.com/posts/chrome-devtools-fun-with-golang/). However, note that a lot has changed in the architecture since I wrote that post._
 
-gorp is an created for web pentesting and reverse engineering. It leverages the Chrome Dev Tool protocol to intercept HTTP responses as you conduct pentest with Chrome via the use of go plugins.
+goRE is an created for web pentesting and reverse engineering. It leverages the Chrome Dev Tool protocol to intercept HTTP responses as you conduct pentest with Chrome via the use of go plugins.
 
-## gorp plugins
-Gorp plugins are essentially modules that you can use to modify or audit web responses. There are two different types of plugins (so far):
+## goRE plugins
+goRE plugins are essentially modules that you can use to modify or audit web responses. There are two different types of plugins (so far):
 
 - **Processors:** processors plugins alter the response before it is rendered in the browser. This can be useful for things like modifying JavaScript code, changing HTML directives, unhiding elements in the page, highlighting areas of interest, etc.
 
 - **Inspectors:**: inspectors conduct  analysis on responses. For instance, you may want to record all references to API calls made by the application by inspecting JavaScript code. This way, rather than waiting until the browser makes a call to `/api/admin/adduser`, you may be able to find a reference to that path in the client side code. JS Framework specific inspectors could also be used to inspect things such as services, controllers, authorization controllers, etc. Inspectors do not modify responses.
 
 
-### Recompiling gorp plugins
+### Recompiling goRE plugins
 At the moment there are constant changes on the module package. A change in that package would require that plugins are recompiled. This can be a pain as every module would need to be recompiled, so we have automated that task. Just run the below command and all modules will be recompiled:
 
 ```shell
 go run main.go -p
 ```
 
-## Using gorp
+## Using goRE
 1. Create a configuration file that uses the structure used by the `config.yaml` file in the root directory of this repo.
 2. Make sure the plugins that you want to use are compiled. You can compile all available plugins by running `go run main.go -p`
 3. You can find information about any plugin by running this command:
    ```bash
    go run main.go -i -m "/the/path/of/the/module/"
    ```
-4. To run gorp:
+4. To run goRE:
    ```bash
    go run main.g -c "./path/to/your/config/file.yml"
    ```
    
 If run successfully, a new Chrome window should open up with two tabs. Use the second tab to navigate to the site that you are currently pentesting. Press `ctrl + c` to end the session (TODO: make a more effective way to end sessions).
 
-### Ok, but what can I actually do with gorp?
+### Ok, but what can I actually do with goRE?
 
 There are 7 modules available at the moment. You can find information about each plugin by running `go run main.go -i /path/to/module/`
 
