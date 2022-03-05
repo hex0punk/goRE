@@ -3,9 +3,9 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/DharmaOfCode/gorp/base"
-	"github.com/DharmaOfCode/gorp/debugger"
-	"github.com/DharmaOfCode/gorp/modules"
+	"github.com/hex0punk/goRE/base"
+	"github.com/hex0punk/goRE/debugger"
+	"github.com/hex0punk/goRE/modules"
 	"github.com/spf13/viper"
 	"github.com/wirepair/gcd"
 	"github.com/wirepair/gcd/gcdapi"

@@ -3,7 +3,7 @@ package modules
 
 import (
 	"fmt"
-	"github.com/DharmaOfCode/gorp/base"
+	"github.com/hex0punk/goRE/base"
 	"github.com/fatih/color"
 	"plugin"
 )

@@ -5,7 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/DharmaOfCode/gorp/modules"
+	"github.com/hex0punk/goRE/modules"
 	"github.com/fsnotify/fsnotify"
 	"github.com/wirepair/gcd"
 	"github.com/wirepair/gcd/gcdapi"

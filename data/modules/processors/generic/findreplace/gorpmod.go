@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/DharmaOfCode/gorp/modules"
+	"github.com/hex0punk/goRE/modules"
 	"io/ioutil"
 	"log"
 	"strings"

@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/DharmaOfCode/gorp/api"
-	"github.com/DharmaOfCode/gorp/modules"
+	"github.com/hex0punk/goRE/api"
+	"github.com/hex0punk/goRE/modules"
 )
 
 type injector struct {
